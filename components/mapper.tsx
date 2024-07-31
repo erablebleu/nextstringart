@@ -1,6 +1,6 @@
 import { INail } from "@/model/instructions";
 import { NailMap } from "@/model/nailMap";
-import { Box, Button, ButtonGroup, Typography } from "@mui/material";
+import { Box, Button, ButtonGroup, Stack, Typography } from "@mui/material";
 import React from "react";
 import NumericInput from "./numericInput";
 
@@ -14,11 +14,12 @@ export default function ({ nailMap, imageData, onChange }: Options) {
     const [isDragging, setIsDragging] = React.useState(false)
     const [state, setState] = React.useState(nailMap.nails.length > 0 ? nailMap : NailMap.fromPolygon())
     const [index, setIndex] = React.useState(0)
-
-    const minX = Math.min(...state.nails.map(n => n.position.x - n.diameter / 2))
-    const maxX = Math.max(...state.nails.map(n => n.position.x + n.diameter / 2))
-    const minY = Math.min(...state.nails.map(n => n.position.y - n.diameter / 2))
-    const maxY = Math.max(...state.nails.map(n => n.position.y + n.diameter / 2))
+    
+    const m = 60
+    const minX = Math.min(...state.nails.map(n => n.position.x - n.diameter / 2)) - m
+    const maxX = Math.max(...state.nails.map(n => n.position.x + n.diameter / 2)) + m
+    const minY = Math.min(...state.nails.map(n => n.position.y - n.diameter / 2)) - m
+    const maxY = Math.max(...state.nails.map(n => n.position.y + n.diameter / 2)) + m
 
     React.useEffect(() => {
         setState(nailMap.nails.length > 0 ? nailMap : NailMap.fromPolygon())
@@ -85,19 +86,18 @@ export default function ({ nailMap, imageData, onChange }: Options) {
                     }
                 })}
             />
-            <Box>
-                <Typography>{state.nails.length} nails</Typography>
-                <Typography>selected nail: {index} | {state.lines[index].length} paths</Typography>
+            <Stack direction='row' spacing={1}>
+                <Typography>{state.nails.length} nails | selected: {index} | {state.lines[index].length} paths</Typography>
                 <ButtonGroup>
                     <Button onClick={() => setIndex(index == 0 ? state.nails.length - 1 : index - 1)}>-</Button>
                     <Button onClick={() => setIndex(index == state.nails.length - 1 ? 0 : index + 1)}>+</Button>
                 </ButtonGroup>
-            </Box>
+            </Stack>
 
             <svg viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`}
                 preserveAspectRatio="xMidYMid"
-                height='80vh'
                 width='100%'
+                height='calc(100% - 250px)'
                 onWheel={onWheel}
                 onMouseDown={(e) => setIsDragging(e.shiftKey)}
                 onMouseUp={() => setIsDragging(false)}

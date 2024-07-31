@@ -187,7 +187,7 @@ export default function ({ uuid, nails, steps }: IOptions) {
                 <svg viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`}
                     preserveAspectRatio="xMidYMid meet"
                     width="100%"
-                    height='90vh' >
+                    height='calc(100% - 100px)' >
                     <linearGradient
                         id="gradient_0000" >
                         <stop offset="0" stopColor="#000000" />
