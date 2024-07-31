@@ -10,7 +10,6 @@ interface IOptions {
 export default function ({ imageData, onChange }: IOptions) {
 
     const readFile = async (e: any) => {
-        console.log("read file")
         e.preventDefault()
         const reader = new FileReader()
         reader.onload = async (e) => {

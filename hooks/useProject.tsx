@@ -10,7 +10,6 @@ export default function useProject(uuid: string): [IProject | undefined, Dispatc
         try {
             const item = window.localStorage.getItem(key)
             if (item) {
-                console.log("get item")
                 setValue(JSON.parse(item))
             }
         } catch (e) {

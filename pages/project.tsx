@@ -15,10 +15,7 @@ export default function () {
     const router = useRouter()
     const uuid: string = router.query.uuid as string
     const [project, setProject] = useProject(uuid)
-    console.log(router.query)
-    console.log(router.query.tab ?? 'threads')
     const tab = router.query.tab ?? 'threads'
-    // const [threadData, setThreadData] = React.useState<Array<Uint8ClampedArray | null>>([])
     const threadData = React.useRef<Array<Uint8ClampedArray | null>>([])
 
     if (!project) {

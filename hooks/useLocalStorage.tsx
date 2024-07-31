@@ -14,7 +14,7 @@ export default function useLocalStorage<T>(
                 setValue(JSON.parse(item))
             }
         } catch (e) {
-            console.log(e)
+            console.error(e)
         }
         return () => {
             isMounted.current = false
@@ -23,7 +23,6 @@ export default function useLocalStorage<T>(
 
     useEffect(() => {
         if (isMounted.current) {
-            console.log("save")
             window.localStorage.setItem(key, JSON.stringify(value))
         } else {
             isMounted.current = true

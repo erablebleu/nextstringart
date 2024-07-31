@@ -21,7 +21,6 @@ export default function Home() {
     const [lines, setLines] = React.useState<IPixelLine[]>([])
 
     const refresh = async () => {
-        console.log("refresh", p0, p1)
         setLines([
             PixelLine.get(p0, p1, PixelLineMode.Simple),
             PixelLine.get(p0, p1, PixelLineMode.Bresenham),
@@ -30,8 +29,6 @@ export default function Home() {
     }
     
     React.useEffect(() => { refresh() }, [])
-
-    console.log(lines)
 
     lines.forEach((line: IPixelLine) =>
         line.points.forEach((p: IWeightPoint2D) => {
