@@ -25,11 +25,11 @@ export default function () {
     const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
         router.replace({
             query: { ...router.query, tab: newValue },
-         })
+        })
     }
 
     return (
-        <Box sx={{width: '100%'}}>
+        <Box sx={{ width: '100%' }}>
             <Tabs value={tab} onChange={handleTabChange}>
                 <Tab value="threads" label="Threads" />
                 <Tab value="map" label="Map" />
@@ -37,7 +37,11 @@ export default function () {
                 <Tab value="stepper" label="Stepper" />
             </Tabs>
 
-            {tab == 'threads' && <React.Fragment>
+            { /* Collapsed because used to render threadData */ }
+            <Box sx={{
+                visibility: tab == 'threads' ? 'visible' : 'collapse',
+                position: tab == 'threads' ? 'block' : 'fixed',
+                }}>
                 <ButtonGroup variant="outlined" sx={{ marginBottom: 2 }}>
                     <Button onClick={(e) => setProject({
                         ...project,
@@ -72,29 +76,29 @@ export default function () {
                         </AccordionDetails>
                     </Accordion>
                 ))}
-            </React.Fragment>
-            }
+            </Box>
 
             {tab == 'map' && <React.Fragment>
-                        <Mapper
-                            imageData={project.threads.length > 0 ? project.threads[0].imageInfo.imageData : undefined}
-                            onChange={(newValue: NailMap) => setProject({
-                                ...project,
-                                nailMap: newValue
-                            })}
-                            nailMap={project.nailMap} />
+                <Mapper
+                    imageData={project.threads.length > 0 ? project.threads[0].imageInfo.imageData : undefined}
+                    onChange={(newValue: NailMap) => setProject({
+                        ...project,
+                        nailMap: newValue
+                    })}
+                    nailMap={project.nailMap} />
             </React.Fragment>
             }
 
             {tab == 'calculation' && <React.Fragment>
-                        <CalculatorView
-                            project={project}
-                            // imageDatas={threadData}
-                            imageDatas={threadData}
-                            onChange={(result: IStep[]) => setProject({
-                                ...project,
-                                steps: result
-                            })} />
+                <CalculatorView
+                    project={project}
+                    // imageDatas={threadData}
+                    imageDatas={threadData}
+                    onChange={(result: IStep[]) => setProject({
+                        ...project,
+                        steps: result
+                    })} />
+                <Stepper uuid={uuid} nails={project.nailMap.nails} steps={project.steps} />
             </React.Fragment>
             }
 
