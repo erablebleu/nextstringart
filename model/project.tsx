@@ -1,45 +1,62 @@
-import { IPoint2D, Point2D } from "@/tools/geometry/Point2D"
-import { Nail } from "./instructions"
+import { IInstructions, IStep } from "./instructions"
+import { NailMap } from "./nailMap"
 
-export class Project {
-    public map: Map = new Map
-    public threads: Thread[] = [
-        new Thread()
-    ]
+export interface IProject {
+    nailMap: NailMap
+    threads: Thread[]
+    steps: IStep[]
+    uuid: string
 }
 
-export class Map {
-    public scale: number = 1
-    public position: IPoint2D = { x: 0, y: 0}
-    public nails: Nail[] = []
-    public lines: number[][] = [] // by nails index
+export class Project {
+    public static getInstructions(project: IProject): IInstructions {
+        return {
+            steps: [],
+            map: project.nailMap.nails
+        }
+    }
+    public static new(): IProject {
+        return {
+            uuid: crypto.randomUUID(),
+            nailMap: new NailMap,
+            threads: [],
+            steps: [],
+        }
+    }
+}
+
+export interface IImageInfo {
+    imageData: string
+    width: number
+    height: number
 }
 
 export class Thread {
     public color: string = "#000000"
     public previewThickness: number = 0.1
-    public imageSteps: ImageStep[] = []
-}
-
-export class ImageStep {
     public maxStep: number = 4000
     public calculationThickness: number = 0.1
-    public imageData: Uint8Array = new Uint8Array()
+    public imageInfo: IImageInfo = {
+        imageData: '',
+        width: 0,
+        height: 0
+    }
     public colorOptions: ColorOptions = new ColorOptions()
     public luminosityOptions: LuminosityOptions = new LuminosityOptions()
+    public description?: string = "Black thread"
 }
 
 export class LuminosityOptions {
     public isEnabled: boolean = false
-    public brightness: number = 0
-    public contrast: number = 0
+    public brightness: number = 1 // [0; 2]
+    public contrast: number = 1 // [0; 2]
 }
 
 export class ColorOptions {
     public isEnabled: boolean = false
     public colorMatrix: number[][] = [
-        [ 0.30, 0.30, 0.30 ],
-        [ 0.59, 0.59, 0.59 ],
-        [ 0.11, 0.11, 0.11 ],
+        [0.30, 0.30, 0.30],
+        [0.59, 0.59, 0.59],
+        [0.11, 0.11, 0.11],
     ]
 }

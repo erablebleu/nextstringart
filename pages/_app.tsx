@@ -18,11 +18,13 @@ export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
 
 export default function ({ Component, pageProps }: AppProps) {
     return (
-        <CssVarsProvider theme={theme} defaultMode='light' >
+        <React.Fragment>            
+        {/* <CssVarsProvider theme={theme} defaultMode='light' > */}
             <CssBaseline />
             <Layout>
                 <Component {...pageProps} />
             </Layout>
-        </CssVarsProvider>
+        {/* </CssVarsProvider> */}
+        </React.Fragment>
     )
 }

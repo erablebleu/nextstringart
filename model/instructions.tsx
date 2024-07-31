@@ -1,18 +1,17 @@
 import { RotationDirection } from "@/enums/rotationDirection"
 import { IPoint2D } from "@/tools/geometry/Point2D"
 
-export class Nail {
-    public diameter: number = 0
-    public position: IPoint2D = { x: 0, y: 0 }
+export interface INail {
+    diameter: number
+    position: IPoint2D
 }
 
-export class Step {
-    public nailIndex: number = 0
-    public direction: RotationDirection = RotationDirection.ClockWise
+export interface IStep {
+    nailIndex: number
+    direction: RotationDirection
 }
 
-export class Instructions
-{
-    public map: Nail[] = []
-    public steps: Step[] = []
+export interface IInstructions {
+    map: INail[]
+    steps: IStep[]
 }

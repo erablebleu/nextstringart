@@ -23,6 +23,7 @@ export default function useLocalStorage<T>(
 
     useEffect(() => {
         if (isMounted.current) {
+            console.log("save")
             window.localStorage.setItem(key, JSON.stringify(value))
         } else {
             isMounted.current = true
