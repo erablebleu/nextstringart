@@ -1,17 +1,11 @@
 import { IPoint2D, Point2D } from "@/tools/geometry/Point2D"
 import { INail } from "./instructions"
 import { IVector2D, Vector2D } from "@/tools/geometry/Vector2D"
-
-export interface INailMapPolygonSettings {
-    edgecount: number
-    edgeNailCount: number
-    excludeVertex: boolean
-    diameter: number
-    topEdge: boolean
-}
+import { Frame, PolygonFrame } from "./frame"
 
 export class NailMap {
     public scale: number = 1
+    public angle: number = 0
     public position: IPoint2D = { x: 0, y: 0 }
     public nails: INail[] = []
     public lines: number[][] = [] // by nails index
@@ -32,32 +26,37 @@ export class NailMap {
         return result
     }
 
-    public static fromPolygon({
-        edgeCount = 6,
-        edgeNailCount = 60,
-        diameter = 840,
-        excludeVertex = false,
-        topEdge = true,
-        nailDiameter = 1.8,
-        center = { x: 0, y: 0 }
-    } = {}): NailMap {
-        const result = new NailMap
-        const radius = diameter / 2
-        const totalCount: number = edgeCount * edgeNailCount
+    public static get(frame: Frame): NailMap {
+        return NailMap.fromPolygon(frame as PolygonFrame)
+    }
 
-        for (let i = 0; i < edgeCount; i++) {
-            const t0: number = 2 * Math.PI * i / edgeCount + (topEdge ? 0 : (Math.PI / edgeCount))
-            const t1: number = t0 + 2 * Math.PI / edgeCount
+    public static fromPolygon(polygon: PolygonFrame): NailMap {
+        const result = new NailMap
+        const radius = polygon.diameter / 2
+        const totalCount: number = polygon.nailCount
+        const edgeNailCount: number = Math.floor(polygon.nailCount / polygon.edgeCount)
+        const center = { x: 0, y: 0 }
+
+        for (let i = 0; i < polygon.edgeCount; i++) {
+            const t0: number = 2 * Math.PI * i / polygon.edgeCount
+            const t1: number = t0 + 2 * Math.PI / polygon.edgeCount
             const p0: IPoint2D = { x: center.x + radius * (1 - Math.sin(t0)), y: center.y + radius * (1 - Math.cos(t0)) }
             const p1: IPoint2D = { x: center.x + radius * (1 - Math.sin(t1)), y: center.y + radius * (1 - Math.cos(t1)) }
-            result.nails.push(...NailMap.getLine(p0, p1, edgeNailCount, excludeVertex).map((p: IPoint2D) => ({
-                diameter: nailDiameter,
+            result.nails.push(...NailMap.getLine(p0, p1, edgeNailCount, polygon.excludeVertex).map((p: IPoint2D) => ({
+                diameter: polygon.nailDiameter,
                 position: p
             })))
-            const lines: number[] = Array.apply(0, Array((edgeCount - 1) * edgeNailCount - 1)).map((v, index: number) => (1 + (i + 1) * edgeNailCount + index) % totalCount)
-            result.lines.push(lines.slice(0, (edgeCount - 2) * edgeNailCount - 1))
+            const lines: number[] = Array.apply(0, Array((polygon.edgeCount - 1) * edgeNailCount - 1)).map((v, index: number) => (1 + (i + 1) * edgeNailCount + index) % totalCount)
+            result.lines.push(lines.slice(0, (polygon.edgeCount - 2) * edgeNailCount - 1))
             result.lines.push(...Array.apply(0, Array(edgeNailCount - 1)).map(v => lines))
         }
+
+        return result
+    }
+
+    public static fromCircle(polygon: PolygonFrame): NailMap {
+        const result = new NailMap
+
 
         return result
     }

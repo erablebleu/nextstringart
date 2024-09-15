@@ -1,4 +1,5 @@
 import useProject from "@/hooks/useProject";
+import { DefaultFrame } from "@/model/frame";
 import { NailMap } from "@/model/nailMap";
 import { IProject, Thread } from "@/model/project";
 import { Files } from "@/tools/files";
@@ -45,7 +46,8 @@ export default function () {
     const create = async () => {
         const project: IProject = {
             threads: [new Thread],
-            nailMap: NailMap.fromPolygon(),
+            frame: DefaultFrame(),
+            nailMap: NailMap.fromPolygon(DefaultFrame()),
             steps: [],
             uuid: crypto.randomUUID()
         }

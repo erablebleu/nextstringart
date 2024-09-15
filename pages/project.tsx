@@ -10,6 +10,7 @@ import useProject from "@/hooks/useProject";
 import { useRouter } from "next/router";
 import { IStep } from "@/model/instructions";
 import Stepper from "@/components/stepper";
+import { DefaultFrame, Frame } from "@/model/frame";
 
 export default function () {
     const router = useRouter()
@@ -81,10 +82,12 @@ export default function () {
             {tab == 'map' && <React.Fragment>
                 <Mapper
                     imageData={project.threads.length > 0 ? project.threads[0].imageInfo.imageData : undefined}
-                    onChange={(newValue: NailMap) => setProject({
+                    onChange={(frame: Frame, nailMap: NailMap) => setProject({
                         ...project,
-                        nailMap: newValue
+                        frame,
+                        nailMap,
                     })}
+                    frame={project.frame ?? DefaultFrame()}
                     nailMap={project.nailMap} />
             </React.Fragment>
             }

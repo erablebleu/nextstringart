@@ -1,7 +1,9 @@
+import { CircleFrame, DefaultFrame, Frame, PolygonFrame } from "./frame"
 import { IInstructions, IStep } from "./instructions"
 import { NailMap } from "./nailMap"
 
 export interface IProject {
+    frame: PolygonFrame | CircleFrame
     nailMap: NailMap
     threads: Thread[]
     steps: IStep[]
@@ -18,6 +20,7 @@ export class Project {
     public static new(): IProject {
         return {
             uuid: crypto.randomUUID(),
+            frame: DefaultFrame(),
             nailMap: new NailMap,
             threads: [],
             steps: [],
