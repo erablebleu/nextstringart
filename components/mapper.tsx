@@ -76,7 +76,7 @@ export default function ({ frame, nailMap, imageData, onChange }: Options) {
                     </ButtonGroup>
                 </Stack>
                 <Stack direction='row' spacing={1}>
-                    <Typography>{state.nailMap.nails.length} nails | selected: {index} | {state.nailMap.lines[index].length} paths</Typography>
+                    <Typography>{state.nailMap.nails.length} nails | selected: {index} x:{state.nailMap.nails[index].position.x},y:{state.nailMap.nails[index].position.y} | {state.nailMap.lines[index].length} paths</Typography>
                     <ButtonGroup>
                         <Button onClick={() => setIndex(index == 0 ? state.nailMap.nails.length - 1 : index - 1)}>-</Button>
                         <Button onClick={() => setIndex(index == state.nailMap.nails.length - 1 ? 0 : index + 1)}>+</Button>
