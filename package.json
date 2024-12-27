@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "tarballize": "del tarball.tar && 7z a -xr@.dockerignore tarball.tar .\\*"
+    "tarballize": "del tarball.tar && 7z a -xr@.dockerignore tarball.tar .\\*",
+    "test_serial": "npx tsx test/serial.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -24,6 +25,8 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "serialport": "^13.0.0",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }
