@@ -51,11 +51,11 @@ export class MachineReferential {
         this._x_max = settings.x0Radius
 
         this._a = startOptions.a ?? 0
-        this._x = startOptions.x ?? 0
+        this._x = startOptions.x ?? settings.x0Radius
         this._z = startOptions.z ?? 0
     }
 
-    public translateZ(t_z: number): number {
+    public translateZTo(t_z: number): number {
         if (t_z < Z_MIN || t_z > Z_MAX)
             throw Error(`Target is outside of the machine: z=${t_z}, mechanical limits are [${Z_MIN};${Z_MAX}]`)
 
@@ -67,7 +67,7 @@ export class MachineReferential {
         return m_z
     }
 
-    public translateX(t_x: number): number {
+    public translateXTo(t_x: number): number {
         if (t_x < this._x_min || t_x > this._x_max)
             throw Error(`Target is outside of the machine: x=${t_x}, mechanical limits are [${this._x_min};${this._x_max}]`)
 
@@ -79,12 +79,12 @@ export class MachineReferential {
         return m_x
     }
 
-    public rotateZ(t_a: number): number {
+    public rotateZTo(t_a: number): number {
         let d_a = t_a - this._a // relative positionning
 
         // limit d_a to [-PI;PI]
-        if (d_a < Math.PI) d_a += 2 * Math.PI
-        if (d_a > Math.PI) d_a -= 2 * Math.PI
+        while (d_a < Math.PI) d_a += 2 * Math.PI
+        while (d_a > Math.PI) d_a -= 2 * Math.PI
 
         const m_a = Number((d_a * X_ROTATION_RATIO).toFixed(3)) // mechanical coordiante
 

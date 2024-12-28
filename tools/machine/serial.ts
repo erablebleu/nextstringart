@@ -36,6 +36,8 @@ export class SerialMachine {
                 this.bufferSize--
             else
                 this._readData.push(line)
+
+            console.debug(`onData: ${line}, buffer size: ${this.bufferSize}`)
         }
 
         this._incommingData = lines[lines.length - 1]
