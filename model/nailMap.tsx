@@ -40,8 +40,9 @@ export class NailMap {
         for (let i = 0; i < polygon.edgeCount; i++) {
             const t0: number = 2 * Math.PI * i / polygon.edgeCount
             const t1: number = t0 + 2 * Math.PI / polygon.edgeCount
-            const p0: IPoint2D = { x: center.x + radius * (1 - Math.sin(t0)), y: center.y + radius * (1 - Math.cos(t0)) }
-            const p1: IPoint2D = { x: center.x + radius * (1 - Math.sin(t1)), y: center.y + radius * (1 - Math.cos(t1)) }
+            const p0: IPoint2D = { x: center.x + radius * Math.sin(t0), y: center.y + radius * Math.cos(t0) }
+            const p1: IPoint2D = { x: center.x + radius * Math.sin(t1), y: center.y + radius * Math.cos(t1) }
+            console.log({p0, p1})
             result.nails.push(...NailMap.getLine(p0, p1, edgeNailCount, polygon.excludeVertex).map((p: IPoint2D) => ({
                 diameter: polygon.nailDiameter,
                 position: p

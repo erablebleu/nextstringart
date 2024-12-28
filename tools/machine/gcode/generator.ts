@@ -45,7 +45,16 @@ export class GCodeGenrator {
         for (let step of instructions.steps) {
             const p = points[step.nailIndex]
 
-            
+            const m_x = referential.translateX(p.radius)
+            const m_a = referential.rotateZ(p.angle)
+
+            result.push(`X${m_a} Y${m_x}`)
+        }
+
+        const reversed = instructions.steps.reverse()
+        for (let step of reversed) {
+            const p = points[step.nailIndex]
+
             const m_x = referential.translateX(p.radius)
             const m_a = referential.rotateZ(p.angle)
 

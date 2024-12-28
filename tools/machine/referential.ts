@@ -45,8 +45,8 @@ export class MachineReferential {
     private _x: number = 0
     private _z: number = 0
 
-    constructor(settings: MachineSettings, startOptions: { a?: number,  x?: number, z?: number} = {}) {
-        this._settings = settings  
+    constructor(settings: MachineSettings, startOptions: { a?: number, x?: number, z?: number } = {}) {
+        this._settings = settings
         this._x_min = settings.x0Radius - settings.xLength
         this._x_max = settings.x0Radius
 
@@ -54,32 +54,32 @@ export class MachineReferential {
         this._x = startOptions.x ?? 0
         this._z = startOptions.z ?? 0
     }
-    
+
     public translateZ(t_z: number): number {
         if (t_z < Z_MIN || t_z > Z_MAX)
             throw Error(`Target is outside of the machine: z=${t_z}, mechanical limits are [${Z_MIN};${Z_MAX}]`)
 
-        const d_z = Number((t_z - this._z).toFixed(3)) // relative positionning
-        const m_z = d_z // mechanical coordinate
+        const d_z = t_z - this._z // relative positionning
+        const m_z = Number(d_z.toFixed(3)) // mechanical coordinate
 
-        this._z += d_z
+        this._z += m_z
 
         return m_z
     }
 
-    public translateX  (t_x: number): number {
+    public translateX(t_x: number): number {
         if (t_x < this._x_min || t_x > this._x_max)
             throw Error(`Target is outside of the machine: x=${t_x}, mechanical limits are [${this._x_min};${this._x_max}]`)
 
-        const d_x = Number((t_x - this._x).toFixed(3)) // relative positionning
-        const m_x = this._settings.x0Radius - this._x // mechanical coordinate
+        const d_x = t_x - this._x // relative positionning
+        const m_x = Number((-d_x).toFixed(3)) // mechanical coordinate
 
-        this._x += d_x
+        this._x += -m_x
 
         return m_x
     }
 
-    public rotateZ  (t_a: number): number {
+    public rotateZ(t_a: number): number {
         let d_a = t_a - this._a // relative positionning
 
         // limit d_a to [-PI;PI]
@@ -89,7 +89,7 @@ export class MachineReferential {
         const m_a = Number((d_a * X_ROTATION_RATIO).toFixed(3)) // mechanical coordiante
 
         this._a += m_a / X_ROTATION_RATIO
-        
+
         return m_a
     }
 }
