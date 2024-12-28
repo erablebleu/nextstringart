@@ -56,12 +56,11 @@ export class SerialMachine {
         for (let i = 0; i < lines.length - 1; i++) {
             const line = lines[i]
 
+            console.debug(`onData: ${line}`)
             if (line.startsWith('ok')) {
                 this.acknowledgeLine()
                 this.sendNextLine()
             }
-
-            console.debug(`onData: ${line}`)
         }
 
         this._incommingData = lines[lines.length - 1]
@@ -71,7 +70,8 @@ export class SerialMachine {
         console.debug({
             type: 'ack',
             commandIndex: this._commandIndex,
-            lineIndex: this._lineIndex})
+            lineIndex: this._lineIndex
+        })
         this._commandAck = true
     }
 
@@ -99,13 +99,15 @@ export class SerialMachine {
                 continue
             }
 
+            // Command line
             this._commandIndex++
             this._commandAck = false
             console.debug({
                 type: 'send',
                 line,
                 commandIndex: this._commandIndex,
-                lineIndex: this._lineIndex})
+                lineIndex: this._lineIndex
+            })
             this._port.write(line + this._settings.delimiter, undefined, err => {
                 if (err) {
                     this.setStatus(MachineStatus.Error)
@@ -129,8 +131,13 @@ export class SerialMachine {
     public async connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             this._port.open(err => {
-                if (err) reject(err)
-                resolve()
+                if (err) {
+                    reject(err)
+                }
+                else {
+                    this._port.flush()
+                    resolve()
+                }
             })
         })
     }

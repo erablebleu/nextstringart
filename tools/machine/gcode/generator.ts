@@ -5,13 +5,19 @@ import { MachineSettings } from "../settings"
 import { MachineReferential } from "../referential"
 import { Polar, PolarPoint } from "@/tools/geometry/polar"
 
+const StartGCode = [
+    'G28', // Auto Home
+    'G91', // Relative Positioning
+]
+
+const EndGCode = [
+    'M400', // Finish Moves
+]
+
 export class GCodeGenrator {
 
     public static generate(instructions: IInstructions, machineSettings: MachineSettings): string[] {
-        const result: Array<string> = [
-            'G28',
-            'G91', // relative positionning
-        ]
+        const result: Array<string> = [...StartGCode]
 
         const points: Array<PolarPoint> = instructions.map.map((nail: INail) => Polar.fromCardinal(nail.position))
         
@@ -43,6 +49,8 @@ export class GCodeGenrator {
 
             result.push(`G0 X${m_a} Y${m_x}`)
         }
+
+        result.push(...EndGCode)
 
         return result
     }

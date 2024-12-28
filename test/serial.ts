@@ -11,6 +11,7 @@ import { RotationDirection } from '@/enums/rotationDirection'
 import { Polar } from '@/tools/geometry/polar';
 
 const outDirectory = join(__dirname, 'out')
+const stdin = process.openStdin()
 
 run()
 
@@ -43,23 +44,34 @@ async function run() {
         map: nailMap.nails,
         steps: [
             ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
-            ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
-            ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
-            ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
+            // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
+            // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
+            // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
         ]
     }, machineSettings)
 
     fs.writeFileSync(join(outDirectory, 'serial.gcode'), gcode.join('\n'), { flag: 'w' })
 
-    const machine = new SerialMachine({
-        path: '/dev/ttyUSB0',
-        baudRate: 250000,
-    },
-        gcode)
+    const machine = new SerialMachine({ path: '/dev/ttyUSB0', baudRate: 250000 }, gcode)
+
+    stdin.addListener("data", function (data) {
+        switch (data.toString().trim()) {
+            case 'p':
+                console.log('### Pause')
+                machine.pause()
+                break
+
+            case 's':
+            case 'r':
+                console.log('### Start/Resume')
+                machine.startOrResume()
+                break
+
+            case 'h':
+                console.log('### Home')
+
+        }
+    })
 
     await machine.connect()
-
-    console.log('### Start send Gcode')
-    await machine.startOrResume()    
-    console.log('### End send Gcode')
 }
