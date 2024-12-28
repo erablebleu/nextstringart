@@ -29,23 +29,23 @@ async function run() {
         excludeVertex: false,
         diameter: 700
     })
-    
+
     if (!fs.existsSync(outDirectory))
         fs.mkdirSync(outDirectory)
 
     fs.writeFileSync(join(outDirectory, 'nailmap.json'), JSON.stringify(nailMap, null, 2), { flag: 'w' })
     fs.writeFileSync(join(outDirectory, 'nailmap.csv'),
-        nailMap.nails.map(x => ({ ...x, polar: Polar.fromCardinal(x.position)}))
-        .map(x => `${x.position.x},${x.position.y},${x.polar.a},${x.polar.r}`).join('\r\n'),
+        nailMap.nails.map(x => ({ ...x, polar: Polar.fromCardinal(x.position) }))
+            .map(x => `${x.position.x},${x.position.y},${x.polar.a},${x.polar.r}`).join('\r\n'),
         { flag: 'w' })
 
     const gcode: Array<string> = GCodeGenrator.generate({
         map: nailMap.nails,
         steps: [
             ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
-             ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
-             ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
-             ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
+            ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
+            ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
+            ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
         ]
     }, machineSettings)
 
@@ -54,19 +54,12 @@ async function run() {
     const machine = new SerialMachine({
         path: '/dev/ttyUSB0',
         baudRate: 250000,
-    })
+    },
+        gcode)
 
     await machine.connect()
 
-    let idx: number = 0
-    
-    while (true) {
-        let data: string | undefined
-
-        while (machine.bufferSize < 5 && idx < gcode.length)
-            await machine.write(gcode[idx++])
-
-        await Await.delay(50)
-    }
-
+    console.log('### Start send Gcode')
+    await machine.startOrResume()    
+    console.log('### End send Gcode')
 }

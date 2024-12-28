@@ -1,4 +1,5 @@
 import { SerialPort } from 'serialport'
+import { ActivablePromise } from '../activablePromise'
 
 export type SerialSettings = {
     path: string,
@@ -6,15 +7,29 @@ export type SerialSettings = {
     delimiter?: string,
 }
 
+export enum MachineStatus {
+    Waiting,
+    Running,
+    Paused,
+    Error,
+    Finished,
+}
+
 export class SerialMachine {
     private _settings: SerialSettings
+    private _data: Array<string> = []
     private _port: SerialPort
     private _incommingData: string = ''
-    private _readData: Array<string> = []
 
-    public bufferSize: number = 0
+    private _lineIndex: number = 0
+    private _lineCount: number
+    private _commandIndex: number = 0
+    private _commandCount: number
+    private _commandAck: boolean = false
+    private _status: MachineStatus = MachineStatus.Waiting
+    private _activablePromise = new ActivablePromise<void>()
 
-    constructor(settings: SerialSettings) {
+    constructor(settings: SerialSettings, data: Array<string>) {
         this._settings = settings
         this._settings.delimiter ??= '\n'
         this._port = new SerialPort({
@@ -22,8 +37,17 @@ export class SerialMachine {
             autoOpen: false,
         })
 
+        this._data = [...data] // copy array to protect from outside modification
+        this._lineCount = this._data.length
+        this._commandCount = this._data.filter(l => !l.startsWith(';')).length
         this._port.on('data', this.onData.bind(this))
     }
+
+    public getLineIndex = () => this._lineIndex
+    public getLineCount = () => this._lineCount
+    public getCommandIndex = () => this._commandIndex
+    public getProgress = () => this._commandIndex / this._commandCount
+    public getStatus = () => this._status
 
     private onData(data: any) {
         this._incommingData += data.toString('ascii')
@@ -32,15 +56,74 @@ export class SerialMachine {
         for (let i = 0; i < lines.length - 1; i++) {
             const line = lines[i]
 
-            if (line == 'ok')
-                this.bufferSize--
-            else
-                this._readData.push(line)
+            if (line.startsWith('ok')) {
+                this.acknowledgeLine()
+                this.sendNextLine()
+            }
 
-            console.debug(`onData: ${line}, buffer size: ${this.bufferSize}`)
+            console.debug(`onData: ${line}`)
         }
 
         this._incommingData = lines[lines.length - 1]
+    }
+
+    private acknowledgeLine() {
+        console.debug({
+            type: 'ack',
+            commandIndex: this._commandIndex,
+            lineIndex: this._lineIndex})
+        this._commandAck = true
+    }
+
+    private sendNextLine() {
+        if (this._status != MachineStatus.Running) return
+
+        if (!this._commandAck) {
+            console.warn('Try to send next line but previous one is not acknowledged')
+            return
+        }
+
+        do {
+            if (this._lineIndex == this._lineCount - 1) {
+                this.setStatus(MachineStatus.Finished)
+                return
+            }
+
+            this._lineIndex++
+
+            const line: string = this._data[this._lineIndex]
+
+            // Comment line
+            if (line.startsWith(';')) {
+                this._lineIndex++
+                continue
+            }
+
+            this._commandIndex++
+            this._commandAck = false
+            console.debug({
+                type: 'send',
+                line,
+                commandIndex: this._commandIndex,
+                lineIndex: this._lineIndex})
+            this._port.write(line + this._settings.delimiter, undefined, err => {
+                if (err) {
+                    this.setStatus(MachineStatus.Error)
+                }
+            })
+            break
+        }
+        while (true)
+    }
+
+    private setStatus(status: MachineStatus) {
+        this._status = status
+
+        switch (status) {
+            case MachineStatus.Finished:
+                this._activablePromise.resolve()
+                break
+        }
     }
 
     public async connect(): Promise<void> {
@@ -52,29 +135,28 @@ export class SerialMachine {
         })
     }
 
-    public async write(data: string): Promise<void> {
-        console.debug(`write data: ${data}, buffer size: ${this.bufferSize}`)
+    public pause() {
+        if (this._status != MachineStatus.Running) return
 
-        return new Promise((resolve, reject) => {
-            this._port.write(data + this._settings.delimiter, undefined, err => {
-                if (err) reject(err)
-                else {
-                    this.bufferSize++
-                    resolve()
-                }
-            })
-        })
+        this.setStatus(MachineStatus.Paused)
     }
 
-    public async read(): Promise<string | undefined> {
-        if (this._readData.length == 0)
-            return undefined
+    public startOrResume(): Promise<void> {
+        switch (this._status) {
+            // Start
+            case MachineStatus.Waiting:
+                this._lineIndex = -1
+                this._commandIndex = -1
+                this._commandAck = true
 
-        const result = this._readData[0]
+            // Resume
+            case MachineStatus.Paused:
+            case MachineStatus.Error:
+                this.setStatus(MachineStatus.Running)
+                this.sendNextLine()
+                break
+        }
 
-        this._readData.splice(0, 1)
-
-        console.debug(`read data: ${result}, buffer size: ${this.bufferSize}`)
-        return result
+        return this._activablePromise.getPromise()
     }
 }
