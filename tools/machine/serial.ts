@@ -31,11 +31,11 @@ export class SerialMachine {
 
         for (let i = 0; i < lines.length - 1; i++) {
             const line = lines[i]
-            this._readData.push(line)
 
             if (line == 'ok')
                 this.bufferSize--
-
+            else
+                this._readData.push(line)
         }
 
         this._incommingData = lines[lines.length - 1]

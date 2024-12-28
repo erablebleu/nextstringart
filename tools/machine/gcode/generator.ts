@@ -1,36 +1,56 @@
 
-/* Machine description
- * X translation
- *   0 = outside ring
- *   400mm = closer to rotation center
- * X rotation
- *   3200 steps per motor rotation (80 steps per unit)
- *   2 stages of 80x20 reduction
- *   => 51200 steps per axis rotation
- *   => 640 units per axis rotation
- * Z Translation
- *   0: up
- *   2: down 
- */
 
-/* GCode infos
- *
- * home: G28 Z
- * relative positioning: G91
- *
- */
+import { IInstructions, INail } from "@/model/instructions"
+import { MachineSettings } from "../settings"
+import { MachineReferential } from "../referential"
 
-export type MachineSettings = {
-    xLength: number
-    x0Radius: number
-    zLow: number
-    zHigh: number
+type PolarPoint = {
+    angle: number // rad
+    radius: number // mm
 }
 
 export class GCodeGenrator {
 
-    public static Generate(machineSettings: MachineSettings): string[] {
-        const result: Array<string> = []
+    public static generate(instructions: IInstructions, machineSettings: MachineSettings): string[] {
+        const result: Array<string> = [
+            'G28',
+            'G91', // relative positionning
+        ]
+
+        const points: Array<PolarPoint> = instructions.map.map((nail: INail) => ({
+            angle: Math.atan2(nail.position.y, nail.position.x),
+            radius: Math.sqrt(Math.pow(nail.position.x, 2) + Math.pow(nail.position.y, 2))
+        }))
+        
+        const referential = new MachineReferential(machineSettings, { a: points[0].angle })
+
+        const dIn = Math.min(...points.map(p => p.radius)) - 10
+
+        const translateZ = (t_z: number) => {
+            const m_z = referential.translateZ(t_z)
+            result.push(`Z${m_z}`)
+        }
+
+        const translateX = (t_x: number) => {
+            const m_x = referential.translateX(t_x)
+            result.push(`Y${m_x}`)
+        }
+
+        const rotateZ = (t_a: number) => {
+            const m_a = referential.rotateZ(t_a)
+            result.push(`X${m_a}`)
+        }
+
+
+        for (let step of instructions.steps) {
+            const p = points[step.nailIndex]
+
+            
+            const m_x = referential.translateX(p.radius)
+            const m_a = referential.rotateZ(p.angle)
+
+            result.push(`X${m_a} Y${m_x}`)
+        }
 
         return result
     }

@@ -1,10 +1,27 @@
 
+import { NailMap } from '@/model/nailMap'
 import { Await } from '../tools/await'
 import { SerialMachine } from '../tools/machine/serial'
+import { DefaultFrame } from '@/model/frame'
+import { GCodeGenrator } from '@/tools/machine/gcode/generator'
+import { MachineSettings } from '@/tools/machine/settings'
+import { RotationDirection } from '@/enums/rotationDirection'
 
 run()
 
 async function run() {
+    const machineSettings: MachineSettings = {
+        xLength: 400,
+        x0Radius: 500,
+        zLow: 2,
+        zHigh: 0,
+    }
+
+    const nailMap = NailMap.fromPolygon(DefaultFrame())
+    const gcode: Array<string> = GCodeGenrator.generate({
+        map: nailMap.nails,
+        steps: nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise}))
+    }, machineSettings)
 
     const machine = new SerialMachine({
         path: '/dev/ttyUSB0',
@@ -19,18 +36,11 @@ async function run() {
 
     while (true) {
         let data: string | undefined
+        let idx: number = 0
 
-        do{
-            data = await machine.read()
-            if(!data)
-                break
+        while(machine.bufferSize < 50 && idx < gcode.length)
+            await machine.write(gcode[idx++])
 
-            console.log(data)
-        }
-        while(data)
-
-
-        await Await.delay(500)
+        await Await.delay(50)
     }
-
 }
