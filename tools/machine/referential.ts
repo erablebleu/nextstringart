@@ -2,22 +2,21 @@ import { MachineSettings } from "./settings"
 
 /* Machine description
  *                 
- *             Xmax        <= X =>          Xmin
- *              │                            │ 
- *              │             ╓── Zmin       │
- *              │           ┌─╨─┐   ^        │
- *              ════════════╡   ╞══ Z ═══════╗
- *                          └─╥─┘   v        ║
- *                            ╙── Zmax       ║
- *     Z                                     ║
- *  rotation                                 ║
- *     │                                     ║ 
- *  ═══╬═════════════════════════════════════╣
- *     │
- *     <────────────── radius ───────────────>
- *
- *
- * 
+ * Xmin          <= X =>          Xmax
+ *  │             ┌───┐            │
+ *  ╔══════ Zmin ═╡   ╞════════════╡
+ *  ║        ^    └─╫─┘
+ *  ║        Z      ║
+ *  ║        v      │ <= needle
+ *  ║       Zmax    │
+ *  ║
+ *  ║                                    frame
+ *  ║      XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+ *  ║<────────────── radius ──────────────>║
+ *  ╚══════════════════════════════════════╣
+ *                                         │
+ *                                         Z 
+ *                                      rotation
  * 
  * X translation
  *   0 = outside ring
