@@ -17,10 +17,7 @@ run()
 
 async function run() {
     const machineSettings: MachineSettings = {
-        xLength: 400,
-        x0Radius: 470,
-        zLow: 2,
-        zHigh: 0,
+        radius: 470,
     }
 
     const nailMap = NailMap.fromPolygon({
