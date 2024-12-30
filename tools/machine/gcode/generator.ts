@@ -6,7 +6,6 @@ import { MachineReferential } from "../referential"
 import { Polar, PolarPoint } from "@/tools/geometry/polar"
 import { RotationDirection } from "@/enums/rotationDirection"
 import { Cartesian, Line, Point, Vector } from "@/tools/geometry/cartesian"
-import { EightKTwoTone } from "@mui/icons-material"
 
 const StartGCode = [
     'G28', // Auto Home
@@ -17,7 +16,7 @@ const EndGCode = [
     'M400', // Finish Moves
 ]
 
-const INNER_RING_MARGIN = 10
+const INNER_RING_MARGIN = 30
 const OUTER_RING_MARGIN = 10
 
 export class GCodeGenrator {
@@ -60,11 +59,6 @@ export class GCodeGenrator {
     private moveToPolar(p: { r?: number, a?: number, z?: number }) {
         let move: string = ''
 
-        console.log({
-            where: 'moveToPolar',
-            ...p,
-        })
-
         if (p.a != undefined)
             move += ` X${this._referential.rotateZTo(p.a)}`
 
@@ -89,6 +83,12 @@ export class GCodeGenrator {
 
     private buildLinearTrajectory(p0: Point, p1: Point, stepCount: number) {
         if (stepCount <= 0) throw Error('stepCount must be positive')
+
+        console.log({
+            where: 'buildLinearTrajectory',
+            p0, 
+            p1
+        })
 
         const v: Vector = Cartesian.scaleVector(Cartesian.getVetor(p0, p1), 1 / stepCount)
 
@@ -149,10 +149,14 @@ export class GCodeGenrator {
             const entryPerp: Line = Cartesian.perpendicular(Cartesian.line(entryTupleNode, node), entryPoint)
             const exitPerp: Line = Cartesian.perpendicular(Cartesian.line(node, exitTupleNode), exitTupleNode)
 
-            const p0 = Cartesian.getClosestPoint(Cartesian.getDistantPoints(entryPerp, entryPoint, 20), this._center)
+            const p0 = Cartesian.getClosestPoint(Cartesian.getDistantPoints(entryPerp, entryPoint, 10), this._center)
             const p0_polar = Polar.fromCartesian(p0)
 
-            const p1 = Cartesian.getClosestPoint(Cartesian.getDistantPoints(exitPerp, exitPoint, 20), this._center)
+            console.log({
+                where: 'getClosestPoint',
+                exitPerp, exitPoint
+            })
+            const p1 = Cartesian.getClosestPoint(Cartesian.getDistantPoints(exitPerp, exitPoint, 10), this._center)
             const p1_polar = Polar.fromCartesian(p1)
 
             // todo: add metadata as comments            

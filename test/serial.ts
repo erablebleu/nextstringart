@@ -7,6 +7,7 @@ import { GCodeGenrator } from '@/tools/machine/gcode/generator'
 import { MachineSettings } from '@/tools/machine/settings'
 import { RotationDirection } from '@/enums/rotationDirection'
 import { Polar } from '@/tools/geometry/polar';
+import { Await } from '@/tools/await';
 
 const outDirectory = join(__dirname, 'out')
 const stdin = process.openStdin()
@@ -19,10 +20,10 @@ async function run() {
     }
 
     const nailMap = NailMap.fromPolygon({
-        nailCount: 360,
+        nailCount: 294,
         nailDiameter: 1.8,
         edgeCount: 6,
-        excludeVertex: false,
+        excludeVertex: true,
         diameter: 700
     })
 
@@ -38,17 +39,16 @@ async function run() {
     const gCodeGenerator = new GCodeGenrator(nailMap.nails, machineSettings)
 
     gCodeGenerator.addSteps([
-        { nailIndex: 12, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 182, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 34, direction: RotationDirection.ClockWise },
-        { nailIndex: 320, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 125, direction: RotationDirection.ClockWise },
-        { nailIndex: 12, direction: RotationDirection.ClockWise },
-        { nailIndex: 0, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 45, direction: RotationDirection.ClockWise },
-        { nailIndex: 12, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 67, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 8, direction: RotationDirection.ClockWise },
+        { nailIndex: 293, direction: RotationDirection.ClockWise },
+        // { nailIndex: 182, direction: RotationDirection.AntiClockWise },
+        // { nailIndex: 34, direction: RotationDirection.ClockWise },
+        // { nailIndex: 289, direction: RotationDirection.ClockWise },
+        // { nailIndex: 12, direction: RotationDirection.ClockWise },
+        // { nailIndex: 0, direction: RotationDirection.AntiClockWise },
+        // { nailIndex: 45, direction: RotationDirection.ClockWise },
+        // { nailIndex: 12, direction: RotationDirection.AntiClockWise },
+        // { nailIndex: 67, direction: RotationDirection.AntiClockWise },
+        // { nailIndex: 8, direction: RotationDirection.ClockWise },
         //...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
         // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
         // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
@@ -59,27 +59,28 @@ async function run() {
 
     fs.writeFileSync(join(outDirectory, 'serial.gcode'), gcode.join('\n'), { flag: 'w' })
 
-return
     const machine = new SerialMachine({ path: '/dev/ttyUSB0', baudRate: 250000 }, gcode)
 
-    stdin.addListener("data", function (data) {
-        switch (data.toString().trim()) {
-            case 'p':
-                console.log('### Pause')
-                machine.pause()
-                break
+    // stdin.addListener("data", function (data) {
+    //     switch (data.toString().trim()) {
+    //         case 'p':
+    //             console.log('### Pause')
+    //             machine.pause()
+    //             break
 
-            case 's':
-            case 'r':
-                console.log('### Start/Resume')
-                machine.startOrResume()
-                break
+    //         case 's':
+    //         case 'r':
+    //             console.log('### Start/Resume')
+    //             machine.startOrResume()
+    //             break
 
-            case 'h':
-                console.log('### Home')
+    //         case 'h':
+    //             console.log('### Home')
 
-        }
-    })
+    //     }
+    // })
 
     await machine.connect()
+    await Await.delay(2000)
+    machine.startOrResume()
 }
