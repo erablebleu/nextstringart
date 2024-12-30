@@ -1,3 +1,4 @@
+import { Polar } from "../geometry/polar"
 import { MachineSettings } from "./settings"
 
 /* Machine description
@@ -85,12 +86,7 @@ export class MachineReferential {
     }
 
     public rotateZTo(t_a: number): number {
-        let d_a = t_a - this._a // relative positionning
-
-        // limit d_a to [-PI;PI]
-        while (d_a < Math.PI) d_a += 2 * Math.PI
-        while (d_a > Math.PI) d_a -= 2 * Math.PI
-
+        const d_a = Polar.normalizeAngle(t_a - this._a) // relative positionning
         const m_a = Number((d_a * Z_ROTATION_RATIO).toFixed(3)) // mechanical coordiante
 
         this._a += m_a / Z_ROTATION_RATIO

@@ -2,9 +2,7 @@
 import { NailMap } from '@/model/nailMap'
 import fs from 'node:fs';
 import { join } from 'path';
-import { Await } from '../tools/await'
 import { SerialMachine } from '../tools/machine/serial'
-import { DefaultFrame } from '@/model/frame'
 import { GCodeGenrator } from '@/tools/machine/gcode/generator'
 import { MachineSettings } from '@/tools/machine/settings'
 import { RotationDirection } from '@/enums/rotationDirection'
@@ -33,22 +31,35 @@ async function run() {
 
     fs.writeFileSync(join(outDirectory, 'nailmap.json'), JSON.stringify(nailMap, null, 2), { flag: 'w' })
     fs.writeFileSync(join(outDirectory, 'nailmap.csv'),
-        nailMap.nails.map(x => ({ ...x, polar: Polar.fromCardinal(x.position) }))
+        nailMap.nails.map(x => ({ ...x, polar: Polar.fromCartesian(x.position) }))
             .map(x => `${x.position.x},${x.position.y},${x.polar.a},${x.polar.r}`).join('\r\n'),
         { flag: 'w' })
 
-    const gcode: Array<string> = GCodeGenrator.generate({
-        map: nailMap.nails,
-        steps: [
-            ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
-            // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
-            // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
-            // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
-        ]
-    }, machineSettings)
+    const gCodeGenerator = new GCodeGenrator(nailMap.nails, machineSettings)
+
+    gCodeGenerator.addSteps([
+        { nailIndex: 12, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 182, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 34, direction: RotationDirection.ClockWise },
+        { nailIndex: 320, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 125, direction: RotationDirection.ClockWise },
+        { nailIndex: 12, direction: RotationDirection.ClockWise },
+        { nailIndex: 0, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 45, direction: RotationDirection.ClockWise },
+        { nailIndex: 12, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 67, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 8, direction: RotationDirection.ClockWise },
+        //...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
+        // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
+        // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
+        // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
+    ])
+
+    const gcode: Array<string> = gCodeGenerator.generate()
 
     fs.writeFileSync(join(outDirectory, 'serial.gcode'), gcode.join('\n'), { flag: 'w' })
 
+return
     const machine = new SerialMachine({ path: '/dev/ttyUSB0', baudRate: 250000 }, gcode)
 
     stdin.addListener("data", function (data) {
