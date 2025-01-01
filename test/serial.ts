@@ -40,15 +40,16 @@ async function run() {
 
     gCodeGenerator.addSteps([
         { nailIndex: 293, direction: RotationDirection.ClockWise },
-        // { nailIndex: 182, direction: RotationDirection.AntiClockWise },
-        // { nailIndex: 34, direction: RotationDirection.ClockWise },
-        // { nailIndex: 289, direction: RotationDirection.ClockWise },
-        // { nailIndex: 12, direction: RotationDirection.ClockWise },
-        // { nailIndex: 0, direction: RotationDirection.AntiClockWise },
-        // { nailIndex: 45, direction: RotationDirection.ClockWise },
-        // { nailIndex: 12, direction: RotationDirection.AntiClockWise },
-        // { nailIndex: 67, direction: RotationDirection.AntiClockWise },
-        // { nailIndex: 8, direction: RotationDirection.ClockWise },
+        { nailIndex: 182, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 34, direction: RotationDirection.ClockWise },
+        { nailIndex: 289, direction: RotationDirection.ClockWise },
+        { nailIndex: 12, direction: RotationDirection.ClockWise },
+        { nailIndex: 0, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 45, direction: RotationDirection.ClockWise },
+        { nailIndex: 12, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 67, direction: RotationDirection.AntiClockWise },
+        { nailIndex: 8, direction: RotationDirection.ClockWise },
+        { nailIndex: 290, direction: RotationDirection.ClockWise },
         //...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
         // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
         // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
@@ -61,26 +62,26 @@ async function run() {
 
     const machine = new SerialMachine({ path: '/dev/ttyUSB0', baudRate: 250000 }, gcode)
 
-    // stdin.addListener("data", function (data) {
-    //     switch (data.toString().trim()) {
-    //         case 'p':
-    //             console.log('### Pause')
-    //             machine.pause()
-    //             break
+    stdin.addListener("data", function (data) {
+        switch (data.toString().trim()) {
+            case 'p':
+                console.log('### Pause')
+                machine.pause()
+                break
 
-    //         case 's':
-    //         case 'r':
-    //             console.log('### Start/Resume')
-    //             machine.startOrResume()
-    //             break
+            case 's':
+            case 'r':
+                console.log('### Start/Resume')
+                machine.startOrResume()
+                break
 
-    //         case 'h':
-    //             console.log('### Home')
+            case 'h':
+                console.log('### Home')
 
-    //     }
-    // })
+        }
+    })
 
     await machine.connect()
-    await Await.delay(2000)
-    machine.startOrResume()
+    // await Await.delay(2000)
+    // machine.startOrResume()
 }

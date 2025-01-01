@@ -5,19 +5,24 @@ import { MachineSettings } from "../settings"
 import { MachineReferential } from "../referential"
 import { Polar, PolarPoint } from "@/tools/geometry/polar"
 import { RotationDirection } from "@/enums/rotationDirection"
-import { Cartesian, Line, Point, Vector } from "@/tools/geometry/cartesian"
+import { Cartesian, Point, Vector } from "@/tools/geometry/cartesian"
 
 const StartGCode = [
     'G28', // Auto Home
     'G91', // Relative Positioning
+
+    'M201 X40 Y400', // Print / Travel Move Limits | default values: { 200, 200, 100, 3000 }
+    'M203 X300 Y400 Z50', // Set Max Feedrate | default values: { 200, 200, 100, 25 }
 ]
 
 const EndGCode = [
     'M400', // Finish Moves
 ]
 
-const INNER_RING_MARGIN = 30
-const OUTER_RING_MARGIN = 10
+const INNER_RING_MARGIN = 100
+const LINEAR_TRAJECTORY_LENGTH = 20
+const LINEAR_TRAJECTORY_STEP_COUNT = 20
+const ARC_TRAJCTORY_STEP_COUNT = 20
 
 export class GCodeGenrator {
     private _machineSettings: MachineSettings
@@ -26,6 +31,8 @@ export class GCodeGenrator {
     private _gcode: Array<string> = [...StartGCode]
     private _center: Point = { x: 0, y: 0 }
     private _innerRingX: number
+    private _zLow: number = 2
+    private _zHigh: number = 0
 
     constructor(map: INail[], machineSettings: MachineSettings) {
         this._machineSettings = machineSettings
@@ -75,20 +82,11 @@ export class GCodeGenrator {
     }
 
     private moveToCartesian(p: { x: number, y: number, z?: number }) {
-        this.moveToPolar({
-            ...Polar.fromCartesian(p),
-            z: p.z,
-        })
+        this.moveToPolar(Polar.fromCartesian(p))
     }
 
     private buildLinearTrajectory(p0: Point, p1: Point, stepCount: number) {
         if (stepCount <= 0) throw Error('stepCount must be positive')
-
-        console.log({
-            where: 'buildLinearTrajectory',
-            p0, 
-            p1
-        })
 
         const v: Vector = Cartesian.scaleVector(Cartesian.getVetor(p0, p1), 1 / stepCount)
 
@@ -146,27 +144,30 @@ export class GCodeGenrator {
 
             const entryPoint: Point = Cartesian.middleOf(entryTupleNode, node)
             const exitPoint: Point = Cartesian.middleOf(node, exitTupleNode)
-            const entryPerp: Line = Cartesian.perpendicular(Cartesian.line(entryTupleNode, node), entryPoint)
-            const exitPerp: Line = Cartesian.perpendicular(Cartesian.line(node, exitTupleNode), exitTupleNode)
-
-            const p0 = Cartesian.getClosestPoint(Cartesian.getDistantPoints(entryPerp, entryPoint, 10), this._center)
+            const d0 = Math.sqrt(Math.pow(Cartesian.distance(entryTupleNode, node) / 2, 2) + Math.pow(LINEAR_TRAJECTORY_LENGTH, 2))
+            const p0 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(entryTupleNode, node, d0), this._center)
             const p0_polar = Polar.fromCartesian(p0)
 
-            console.log({
-                where: 'getClosestPoint',
-                exitPerp, exitPoint
-            })
-            const p1 = Cartesian.getClosestPoint(Cartesian.getDistantPoints(exitPerp, exitPoint, 10), this._center)
+            const d1 = Math.sqrt(Math.pow(Cartesian.distance(node, exitTupleNode) / 2, 2) + Math.pow(LINEAR_TRAJECTORY_LENGTH, 2))
+            const p1 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, d1), this._center)
             const p1_polar = Polar.fromCartesian(p1)
 
-            // todo: add metadata as comments            
+            // z move
+            p0.z = this._zHigh
+            entryPoint.z = this._zLow
+            exitPoint.z = this._zLow
+            p1.z = this._zHigh
+
+            // todo: add metadata as comments
             this.moveToPolar({ r: this._innerRingX })
             this.moveToPolar({ a: p0_polar.a })
             this.moveToPolar({ r: p0_polar.r })
-            this.buildLinearTrajectory(p0, entryPoint, 20)
-            this.buildArc(node, entryPoint, exitPoint, step.direction, 20)
-            this.buildLinearTrajectory(exitPoint, p1, 20)
+            this.buildLinearTrajectory(p0, entryPoint, LINEAR_TRAJECTORY_STEP_COUNT)
+            this.buildArc(node, entryPoint, exitPoint, step.direction, ARC_TRAJCTORY_STEP_COUNT)
+            this.buildLinearTrajectory(exitPoint, p1, LINEAR_TRAJECTORY_STEP_COUNT)
         }
+
+        this.moveToPolar({ r: this._innerRingX })
     }
 
     public generate(): Array<string> {
