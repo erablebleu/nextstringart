@@ -1,3 +1,5 @@
+'use client'
+
 import { IPixelLine, IWeightPoint2D, PixelLine, PixelLineMode } from "@/tools/calculation/PixelLine";
 import { IPoint2D } from "@/tools/geometry/Point2D";
 import { Refresh } from "@mui/icons-material";

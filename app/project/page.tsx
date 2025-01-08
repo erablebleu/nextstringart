@@ -1,3 +1,5 @@
+'use client'
+
 import React from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, ButtonGroup, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { Thread } from "@/model/project";

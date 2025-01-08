@@ -1,12 +1,15 @@
+'use client'
+
 import Stepper from "@/components/stepper"
 import useProject from "@/hooks/useProject"
 import { Button, Typography } from "@mui/material"
-import { useRouter } from "next/router"
+import { useRouter, useSearchParams } from "next/navigation"
 import React from "react"
 
 export default function () {
-    const router = useRouter()
-    const uuid: string = router.query.uuid as string
+    const searchParams = useSearchParams()
+
+    const uuid: string = searchParams.get('uuid')!
     const [project] = useProject(uuid)
 
     return (
