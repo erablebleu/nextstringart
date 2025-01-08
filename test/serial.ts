@@ -8,6 +8,7 @@ import { MachineSettings } from '@/tools/machine/settings'
 import { RotationDirection } from '@/enums/rotationDirection'
 import { Polar } from '@/tools/geometry/polar';
 import { Await } from '@/tools/await';
+import { IStep } from '@/model/instructions';
 
 const outDirectory = join(__dirname, 'out')
 const stdin = process.openStdin()
@@ -16,15 +17,24 @@ run()
 
 async function run() {
     const machineSettings: MachineSettings = {
-        radius: 470,
+        radius: 481.5
     }
 
+    // G
+    // const nailMap = NailMap.fromPolygon({
+    //     nailCount: 294,
+    //     nailDiameter: 1.8,
+    //     edgeCount: 6,
+    //     excludeVertex: true,
+    //     diameter: 690
+    // })
+
     const nailMap = NailMap.fromPolygon({
-        nailCount: 294,
+        nailCount: 384,
         nailDiameter: 1.8,
         edgeCount: 6,
-        excludeVertex: true,
-        diameter: 700
+        excludeVertex: false,
+        diameter: 910
     })
 
     if (!fs.existsSync(outDirectory))
@@ -36,31 +46,48 @@ async function run() {
             .map(x => `${x.position.x},${x.position.y},${x.polar.a},${x.polar.r}`).join('\r\n'),
         { flag: 'w' })
 
-    const gCodeGenerator = new GCodeGenrator(nailMap.nails, machineSettings)
+    const gCodeSettings = {
+        zLow: 35,
+        zHigh: 20,
+    }
+    const gCodeGenerator = new GCodeGenrator(nailMap.nails, machineSettings, gCodeSettings)
 
-    gCodeGenerator.addSteps([
-        { nailIndex: 293, direction: RotationDirection.ClockWise },
-        { nailIndex: 182, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 34, direction: RotationDirection.ClockWise },
-        { nailIndex: 289, direction: RotationDirection.ClockWise },
-        { nailIndex: 12, direction: RotationDirection.ClockWise },
-        { nailIndex: 0, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 45, direction: RotationDirection.ClockWise },
-        { nailIndex: 12, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 67, direction: RotationDirection.AntiClockWise },
-        { nailIndex: 8, direction: RotationDirection.ClockWise },
-        { nailIndex: 290, direction: RotationDirection.ClockWise },
+    const steps: Array<IStep> = [
+        ...Array.from({length: 100}, (_, index) => ({ 
+            nailIndex: (89 + (index * 63)) % 384, 
+            direction: RotationDirection.ClockWise 
+        }))
+        // { nailIndex: 0, direction: RotationDirection.ClockWise },
+        // { nailIndex: 64, direction: RotationDirection.ClockWise },
+        // { nailIndex: 128, direction: RotationDirection.ClockWise },
+        // { nailIndex: 192, direction: RotationDirection.ClockWise },
+        // { nailIndex: 256, direction: RotationDirection.ClockWise },
+        // { nailIndex: 320, direction: RotationDirection.ClockWise },
+
+        // { nailIndex: 293, direction: RotationDirection.ClockWise },
+        // { nailIndex: 182, direction: RotationDirection.AntiClockWise },
+        // { nailIndex: 34, direction: RotationDirection.ClockWise },
+        // { nailIndex: 289, direction: RotationDirection.ClockWise },
+        // { nailIndex: 12, direction: RotationDirection.ClockWise },
+        // { nailIndex: 0, direction: RotationDirection.AntiClockWise },
+        // { nailIndex: 45, direction: RotationDirection.ClockWise },
+        // { nailIndex: 12, direction: RotationDirection.AntiClockWise },
+        // { nailIndex: 67, direction: RotationDirection.AntiClockWise },
+        // { nailIndex: 8, direction: RotationDirection.ClockWise },
+        // { nailIndex: 290, direction: RotationDirection.ClockWise },
         //...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
         // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })),
         // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
         // ...nailMap.nails.map((n, idx) => ({ nailIndex: idx, direction: RotationDirection.ClockWise })).reverse(),
-    ])
+    ]
 
-    const gcode: Array<string> = gCodeGenerator.generate()
+    gCodeGenerator.addSteps(steps)
 
-    fs.writeFileSync(join(outDirectory, 'serial.gcode'), gcode.join('\n'), { flag: 'w' })
+    const gCode: Array<string> = gCodeGenerator.generate()
 
-    const machine = new SerialMachine({ path: '/dev/ttyUSB0', baudRate: 250000 }, gcode)
+    fs.writeFileSync(join(outDirectory, 'serial.gcode'), gCode.join('\n'), { flag: 'w' })
+
+    const machine = new SerialMachine({ path: '/dev/ttyUSB1', baudRate: 250000 }, gCode)
 
     stdin.addListener("data", function (data) {
         switch (data.toString().trim()) {

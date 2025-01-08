@@ -94,10 +94,8 @@ export class SerialMachine {
             const line: string = this._data[this._lineIndex]
 
             // Comment line
-            if (line.startsWith(';')) {
-                this._lineIndex++
+            if (line.startsWith(';'))
                 continue
-            }
 
             // Command line
             this._commandIndex++
@@ -136,6 +134,8 @@ export class SerialMachine {
                 }
                 else {
                     this._port.flush()
+                    this._port.write(this._settings.delimiter)
+                    
                     resolve()
                 }
             })
