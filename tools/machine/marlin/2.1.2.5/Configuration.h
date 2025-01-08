@@ -1268,7 +1268,7 @@
  * Override with M92
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 98 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 16, 80, 40, 98 }
 
 /**
  * Default Max Feed Rate (linear=mm/s, rotational=°/s)
@@ -1279,7 +1279,7 @@
 
 #define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
 #if ENABLED(LIMITED_MAX_FR_EDITING)
-  #define MAX_FEEDRATE_EDIT_VALUES    { 250, 250, 200, 50 } // ...or, set your own edit limits
+  #define MAX_FEEDRATE_EDIT_VALUES    { 1000, 500, 200, 50 } // ...or, set your own edit limits
 #endif
 
 /**
@@ -1288,7 +1288,7 @@
  * Override with M201
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_ACCELERATION      { 200, 200, 100, 3000 }
+#define DEFAULT_MAX_ACCELERATION      { 200, 200, 200, 3000 }
 
 #define LIMITED_MAX_ACCEL_EDITING     // Limit edit via M201 or LCD to DEFAULT_MAX_ACCELERATION * 2
 #if ENABLED(LIMITED_MAX_ACCEL_EDITING)
@@ -1803,9 +1803,9 @@
 #define Y_MIN_POS 0
 #define Z_MIN_POS 0
 
-#define X_MAX_POS 800
+#define X_MAX_POS 3500
 #define Y_MAX_POS 400
-#define Z_MAX_POS 4
+#define Z_MAX_POS 80
 //#define Z_MAX_POS 250
 //#define I_MIN_POS 0
 //#define I_MAX_POS 50
@@ -2183,7 +2183,7 @@
 #endif
 
 // Homing speeds (linear=mm/min, rotational=°/min)
-#define HOMING_FEEDRATE_MM_M { (40*60), (40*60), (6*60) }
+#define HOMING_FEEDRATE_MM_M { (200*60), (40*60), (20*60) }
 
 // Validate that endstops are triggered on homing moves
 #define VALIDATE_HOMING_ENDSTOPS

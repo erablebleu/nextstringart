@@ -37,12 +37,19 @@ import { MachineSettings } from "./settings"
 const X_MIN = 0
 const X_MAX = 400
 
+const Z_TRANSLATION_STEP_COUNT = 3200
 const Z_TRANSLATION_MIN = 0
-const Z_TRANSLATION_MAX = 4
+const Z_TRANSLATION_MAX = 40
 
-const Z_TRANSLATION_STEP_PER_UNIT = 400
+const Z_TRANSLATION_STEP_PER_UNIT = 40
 
-const Z_ROTATION_RATIO = 640 / (2 * Math.PI) // units per rad
+// 3200 steps / tr
+// 4 = 80 / 20 pulley ratio
+// 4 steps per unit (see marlin/Configuration.h)
+const Z_ROTATION_STEP_COUNT = 3200
+const Z_ROTATION_PULLEY_RATIO = 4 * 4
+const Z_ROTATION_STEPS_PER_UNIT = 16
+const Z_ROTATION_UNITS_PER_RAD = Z_ROTATION_STEP_COUNT * Z_ROTATION_PULLEY_RATIO / (Z_ROTATION_STEPS_PER_UNIT * 2 * Math.PI) // units per rad
 
 export class MachineReferential {
     private _x_min: number
@@ -64,7 +71,7 @@ export class MachineReferential {
         if (t_z < Z_TRANSLATION_MIN || t_z > Z_TRANSLATION_MAX)
             throw Error(`Target is outside of the machine: z=${t_z}, mechanical limits are [${Z_TRANSLATION_MIN};${Z_TRANSLATION_MAX}]`)
 
-        t_z = Math.acos(1 - 2 * t_z / (Z_TRANSLATION_MAX - Z_TRANSLATION_MIN)) * 1600 / Math.PI / Z_TRANSLATION_STEP_PER_UNIT
+        t_z = Math.acos(1 - 2 * t_z / (Z_TRANSLATION_MAX - Z_TRANSLATION_MIN)) * Z_TRANSLATION_STEP_COUNT / 2 / Math.PI / Z_TRANSLATION_STEP_PER_UNIT
         const d_z = t_z - this._z // relative positionning
         const m_z = Number(d_z.toFixed(3)) // mechanical coordinate
 
@@ -87,9 +94,9 @@ export class MachineReferential {
 
     public rotateZTo(t_a: number): number {
         const d_a = Polar.normalizeAngle(t_a - this._a) // relative positionning
-        const m_a = Number((d_a * Z_ROTATION_RATIO).toFixed(3)) // mechanical coordiante
+        const m_a = Number((d_a * Z_ROTATION_UNITS_PER_RAD).toFixed(3)) // mechanical coordiante
 
-        this._a += m_a / Z_ROTATION_RATIO
+        this._a += m_a / Z_ROTATION_UNITS_PER_RAD
 
         return m_a
     }
