@@ -18,15 +18,25 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
-import MailIcon from '@mui/icons-material/Mail';
 import dynamic from 'next/dynamic';
+import { Architecture, Article, Home, PrecisionManufacturing } from '@mui/icons-material';
+import { usePathname, useRouter } from 'next/navigation';
+import { Grid } from '@mui/material';
+import { AppContext } from '@/contexts/appContext';
 
 const drawerWidth = 240
 
+const Menu = [
+    { title: 'home', icon: <Home />, href: '/' },
+    { title: 'frames', icon: <Article />, href: '/frame' },
+    { title: 'projects', icon: <Architecture />, href: '/project' },
+    { title: 'machine', icon: <PrecisionManufacturing />, href: '/machine/control' },
+]
+
+
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{ open?: boolean }>(({ theme, open }) => ({
     flexGrow: 1,
-    padding: theme.spacing(3),
+    padding: theme.spacing(1),
     transition: theme.transitions.create('margin', {
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.leavingScreen,
@@ -39,6 +49,8 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{ 
         }),
         marginLeft: 0,
     }),
+    display: 'flex',
+    flexDirection: 'column',
 }))
 
 interface AppBarProps extends MuiAppBarProps {
@@ -74,17 +86,23 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 function MainLayout({ children }) {
     const theme = useTheme()
     const [open, setOpen] = React.useState(false)
+    const pathname = usePathname()
+    const appContext = React.useContext(AppContext)
 
-    const handleDrawerOpen = () => {
+    function handleDrawerOpen() {
         setOpen(true)
     }
 
-    const handleDrawerClose = () => {
+    function handleDrawerClose() {
         setOpen(false)
     }
 
+    function isSelected(item: { href: string }): boolean {
+        return item.href == '/' ? item.href == pathname : pathname.startsWith(item.href)
+    }
+
     return (
-        <Box sx={{ display: 'flex' }}>
+        <Box sx={{ display: 'flex', height: '100vh' }}>
             <CssBaseline />
             <AppBar position="fixed" open={open}>
                 <Toolbar>
@@ -97,8 +115,13 @@ function MainLayout({ children }) {
                     >
                         <MenuIcon />
                     </IconButton>
-                    <Typography variant="h6" noWrap component="div">
-                    </Typography>
+                    <Box
+                        display='flex'
+                        flexDirection='row'
+                        flexGrow={1}
+                        alignItems='center'>
+                        {appContext?.appBar}
+                    </Box>
                 </Toolbar>
             </AppBar>
             <Drawer
@@ -121,26 +144,15 @@ function MainLayout({ children }) {
                 </DrawerHeader>
                 <Divider />
                 <List>
-                    {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
-                        <ListItem key={text} disablePadding>
-                            <ListItemButton>
+                    {Menu.map(item => (
+                        <ListItem key={item.href} disablePadding>
+                            <ListItemButton
+                                href={item.href}
+                                selected={isSelected(item)}>
                                 <ListItemIcon>
-                                    {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                                    {item.icon}
                                 </ListItemIcon>
-                                <ListItemText primary={text} />
-                            </ListItemButton>
-                        </ListItem>
-                    ))}
-                </List>
-                <Divider />
-                <List>
-                    {['All mail', 'Trash', 'Spam'].map((text, index) => (
-                        <ListItem key={text} disablePadding>
-                            <ListItemButton>
-                                <ListItemIcon>
-                                    {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                                </ListItemIcon>
-                                <ListItemText primary={text} />
+                                <ListItemText primary={item.title} />
                             </ListItemButton>
                         </ListItem>
                     ))}
@@ -148,7 +160,13 @@ function MainLayout({ children }) {
             </Drawer>
             <Main open={open}>
                 <DrawerHeader />
-                {children}
+                <Box
+                    display='flex'
+                    flexDirection='column'
+                    flexGrow={1}
+                    sx={{ overflowY: 'hidden' }}>
+                    {children}
+                </Box>
             </Main>
         </Box>
     )

@@ -1,6 +1,6 @@
 import { Box, Button, ButtonGroup, Stack, TextField } from "@mui/material";
 import React from "react";
-import { CircleFrame, PolygonFrame } from "@/model/frame";
+import { CircleFrame, PolygonFrame } from "@/model";
 
 interface Options {
     onChange: (frame: PolygonFrame | CircleFrame | undefined) => void

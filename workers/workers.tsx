@@ -1,12 +1,13 @@
-import { IProject } from "@/model/project"
+import { NailMap, Project } from "@/model"
 
-export interface ICalculatorInput {
-    project: IProject    
+export type CalculatorInput = {
+    project: Project    
+    nailMap: NailMap    
     imageDatas: Array<Uint8ClampedArray>
     threads: Array<boolean>
 }
 
-export interface ICalculatorProgress {
+export type CalculatorProgress = {
     stepIndex: number
     threadIndex: number
     message?: string
@@ -17,7 +18,7 @@ export enum CalculatorMessageType {
     Result
 }
 
-export interface ICalculatorMessage {
+export type CalculatorMessage = {
     type: CalculatorMessageType
     value: any
 }

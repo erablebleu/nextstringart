@@ -1,7 +1,6 @@
-import { IStep } from "@/model/instructions";
-import { IProject, Thread } from "@/model/project";
+import { Step, Project, Thread } from "@/model";
 import { Speech } from "@/tools/speech";
-import { CalculatorMessageType, ICalculatorMessage, ICalculatorProgress } from "@/workers/workers";
+import { CalculatorMessageType, CalculatorMessage, CalculatorProgress } from "@/workers/workers";
 import { Button, ButtonGroup, Checkbox, FormControl, FormControlLabel, InputLabel, LinearProgress, MenuItem, OutlinedInput, Select, Stack, Typography } from "@mui/material";
 import React from "react";
 
@@ -21,16 +20,16 @@ const calculators: Array<CalculatorInfo> = [
     }
 ]
 
-interface IOptions {
-    project: IProject
+type Options = {
+    project: Project
     imageDatas: React.MutableRefObject<(Uint8ClampedArray | null)[]>
-    onChange?: (value: IStep[]) => void
+    onChange?: (value: Step[]) => void
 }
 
 interface IState {
     threads: Array<boolean>
     isRunning: boolean
-    progress: ICalculatorProgress
+    progress: CalculatorProgress
     error?: string
     calculator: string
 }
@@ -39,7 +38,7 @@ function preventClose() {
     return "Calculation is running";
 }
 
-export default function ({ project, imageDatas, onChange }: IOptions) {
+export default function ({ project, imageDatas, onChange }: Options) {
     const [state, setState] = React.useState<IState>({
         threads: [],
         isRunning: false,
@@ -65,7 +64,7 @@ export default function ({ project, imageDatas, onChange }: IOptions) {
     }, [project])
 
 
-    const end = ({ error, result }: { error?: string, result?: IStep[] }) => {
+    const end = ({ error, result }: { error?: string, result?: Step[] }) => {
         window.onbeforeunload = null
         setState({
             ...state,
@@ -93,7 +92,7 @@ export default function ({ project, imageDatas, onChange }: IOptions) {
 
         if (!worker) return
 
-        worker.onmessage = (event: MessageEvent<ICalculatorMessage>) => {
+        worker.onmessage = (event: MessageEvent<CalculatorMessage>) => {
             switch (event.data.type) {
                 case CalculatorMessageType.Progress:
                     setState({
@@ -130,6 +129,7 @@ export default function ({ project, imageDatas, onChange }: IOptions) {
 
         worker.postMessage({
             project,
+            nailMap,
             imageDatas: project.threads.map((thread: Thread, index: number) => imageDatas.current[index]!),
             threads: state.threads,
         })

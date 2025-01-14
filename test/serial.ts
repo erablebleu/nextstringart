@@ -1,14 +1,11 @@
-
-import { NailMap } from '@/model/nailMap'
 import fs from 'node:fs';
 import { join } from 'path';
-import { SerialMachine } from '../tools/machine/serial'
-import { GCodeGenrator } from '@/tools/machine/gcode/generator'
+import { MachineJob, SerialMachine } from '../tools/machine/serial'
+import { GCodeGenerator } from '@/tools/machine/gcode/generator'
 import { MachineSettings } from '@/tools/machine/settings'
-import { RotationDirection } from '@/enums/rotationDirection'
 import { Polar } from '@/tools/geometry/polar';
 import { Await } from '@/tools/await';
-import { IStep } from '@/model/instructions';
+import { Step, NailMap, RotationDirection, NailMapHelper, FrameShape } from '@/model';
 
 const outDirectory = join(__dirname, 'out')
 const stdin = process.openStdin()
@@ -17,6 +14,8 @@ run()
 
 async function run() {
     const machineSettings: MachineSettings = {
+        path: '/dev/ttyUSB1', 
+        baudRate: 250000,
         radius: 481.5
     }
 
@@ -29,7 +28,8 @@ async function run() {
     //     diameter: 690
     // })
 
-    const nailMap = NailMap.fromPolygon({
+    const nailMap = NailMapHelper.get({
+        shape: FrameShape.polygon,
         nailCount: 384,
         nailDiameter: 1.8,
         edgeCount: 6,
@@ -50,9 +50,9 @@ async function run() {
         zLow: 35,
         zHigh: 20,
     }
-    const gCodeGenerator = new GCodeGenrator(nailMap.nails, machineSettings, gCodeSettings)
+    const gCodeGenerator = new GCodeGenerator(nailMap.nails, machineSettings, gCodeSettings)
 
-    const steps: Array<IStep> = [
+    const steps: Array<Step> = [
         ...Array.from({length: 100}, (_, index) => ({ 
             nailIndex: (89 + (index * 63)) % 384, 
             direction: RotationDirection.ClockWise 
@@ -87,19 +87,20 @@ async function run() {
 
     fs.writeFileSync(join(outDirectory, 'serial.gcode'), gCode.join('\n'), { flag: 'w' })
 
-    const machine = new SerialMachine({ path: '/dev/ttyUSB1', baudRate: 250000 }, gCode)
+    const machine = new SerialMachine()
+    const machineJob: MachineJob = machine.enqueueJob(gCode)
 
     stdin.addListener("data", function (data) {
         switch (data.toString().trim()) {
             case 'p':
                 console.log('### Pause')
-                machine.pause()
+                machineJob.pause()
                 break
 
             case 's':
             case 'r':
                 console.log('### Start/Resume')
-                machine.startOrResume()
+                machineJob.startOrResume()
                 break
 
             case 'h':
@@ -108,7 +109,7 @@ async function run() {
         }
     })
 
-    await machine.connect()
+    await machine.connect(machineSettings)
     // await Await.delay(2000)
     // machine.startOrResume()
 }

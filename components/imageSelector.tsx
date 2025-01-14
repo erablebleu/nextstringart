@@ -1,6 +1,6 @@
 import React from "react";
 import ImagePreview from "./imagePreview";
-import { IImageInfo } from "@/model/project";
+import { IImageInfo } from "@/model";
 
 interface IOptions {
     imageData?: string

@@ -1,11 +1,10 @@
 
 
-import { INail, IStep } from "@/model/instructions"
+import { Nail, Step, RotationDirection } from "@/model"
 import { MachineSettings } from "../settings"
 import { MachineReferential } from "../referential"
 import { Polar, PolarPoint } from "@/tools/geometry/polar"
-import { RotationDirection } from "@/enums/rotationDirection"
-import { Cartesian, Point, Vector } from "@/tools/geometry/cartesian"
+import { Cartesian, Point, PointHelper, Vector, VectorHelper } from "@/tools/geometry/cartesian"
 
 enum SpeedProfile {
     Slow,
@@ -41,21 +40,24 @@ export type GCodeSettings = {
     zHigh: number
 }
 
-export class GCodeGenrator {
+export class GCodeGenerator {
+    public static readonly CommentRegex = / *;.*/
+    public static readonly MetadataRegex = / *;md\.(?<key>[^:]+):(?<value>.*)/
+
     private _machineSettings: MachineSettings
     private _gCodeSettings: GCodeSettings
     private _referential: MachineReferential
-    private _map: INail[]
+    private _map: Nail[]
     private _gCode: Array<string> = [...StartGCode]
     private _center: Point = { x: 0, y: 0 }
     private _innerRingX: number
 
-    constructor(map: INail[], machineSettings: MachineSettings, gCodeSettings: GCodeSettings) {
+    constructor(map: Nail[], machineSettings: MachineSettings, gCodeSettings: GCodeSettings) {
         this._machineSettings = machineSettings
         this._gCodeSettings = gCodeSettings
         this._map = map
 
-        const polarPoints: Array<PolarPoint> = this._map.map((nail: INail, index) => Polar.fromCartesian(nail.position))
+        const polarPoints: Array<PolarPoint> = this._map.map((nail: Nail, index) => Polar.fromCartesian(nail.position))
 
         this._referential = new MachineReferential(this._machineSettings, { a: polarPoints[0].a })
 
@@ -105,10 +107,10 @@ export class GCodeGenrator {
     private buildLinearTrajectory(p0: Point, p1: Point, stepCount: number) {
         if (stepCount <= 0) throw Error('stepCount must be positive')
 
-        const v: Vector = Cartesian.scaleVector(Cartesian.getVetor(p0, p1), 1 / stepCount)
+        const v: Vector = VectorHelper.scale(PointHelper.substract(p0, p1), 1 / stepCount)
 
         for (let i = 0; i < stepCount - 1; i++) {
-            p0 = Cartesian.addVector(p0, v)
+            p0 = PointHelper.add(p0, v)
             this.moveToCartesian(p0)
         }
 
@@ -160,13 +162,20 @@ export class GCodeGenrator {
         this._gCode.push(`;${message}`)
     }
 
+    private addMetadata(key: string, value: string) {
+        this.addComment(`;md.${key}:${value}`)
+    }
+
     private setSpeedProfile(profile: SpeedProfile) {
         this._gCode.push(`G0 F${SpeedProfileCommands.get(profile)}`)
     }
 
-    public addSteps(steps: IStep[]) {
+    public addSteps(steps: Step[]) {
+        this.moveToPolar({ r: this._innerRingX })
+        this.addMetadata('command', 'pause')
+
         for(let i = 0; i < steps.length; i++) {
-            const step: IStep = steps[i]
+            const step: Step = steps[i]
             const node: Point = this._map[step.nailIndex].position
 
             const entryTupleNode: Point = step.direction == RotationDirection.ClockWise ? this.getPreviousNail(step.nailIndex) : this.getNextNail(step.nailIndex)
@@ -199,7 +208,7 @@ export class GCodeGenrator {
             exit_p2.z = this._gCodeSettings.zHigh
 
             this.displayMessage(`step ${i + 1}/${steps.length}`)
-            this.addComment(`md_step=${i + 1}/${steps.length}`)
+            this.addMetadata('step', `${i + 1}/${steps.length}`)
             this.setSpeedProfile(SpeedProfile.Fast)
             this.moveToPolar({ r: this._innerRingX })
             this.moveToPolar({ a: entry_p0_polar.a })

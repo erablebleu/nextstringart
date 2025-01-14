@@ -1,12 +1,9 @@
-import { RotationDirection } from "@/enums/rotationDirection"
-import { IStep, IInstructions, INail } from "@/model/instructions"
-import { IProject, Thread } from "@/model/project"
-import { IPixelLine, IPixelLineEvaluation, PixelLine, PixelLineMode } from "@/tools/calculation/PixelLine"
-import { ILine2D, Line2D } from "@/tools/geometry/Line2D"
-import { IPoint2D } from "@/tools/geometry/Point2D"
-import { CalculatorMessageType, ICalculatorInput, ICalculatorMessage, ICalculatorProgress } from "./workers"
+import { Project, Thread, Step, Instructions, Nail, RotationDirection, NailMap } from "@/model"
+import { PixelLine, PixelLineEvaluation, PixelLineMode } from "@/tools/calculation/PixelLine"
+import { Point, Line, LineHelper } from "@/tools/geometry"
+import { CalculatorMessageType, CalculatorInput, CalculatorMessage, CalculatorProgress } from "./workers"
 
-interface ILineInfo extends ILine2D {
+type LineInfo = Line & {
     n0Idx: number
     r0: RotationDirection
     n1Idx: number
@@ -14,77 +11,77 @@ interface ILineInfo extends ILine2D {
 }
 
 function post(type: CalculatorMessageType, value: any) {
-    const msg: ICalculatorMessage = {
+    const msg: CalculatorMessage = {
         type,
         value
     }
     postMessage(msg)
 }
 
-function postProgress(data: ICalculatorProgress) {
+function postProgress(data: CalculatorProgress) {
     post(CalculatorMessageType.Progress, data)
 }
 
-function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, threads: Array<boolean>): Array<IStep> {
-    const nails: Array<INail> = project.nailMap.nails
+function calculate({project, nailMap, imageDatas, threads} : CalculatorInput): Array<Step> {
+    const nails: Array<Nail> = nailMap.nails
 
     let minX: number | undefined,
         maxX: number | undefined,
         minY: number | undefined,
         maxY: number | undefined
 
-    const updateMinMax = (p: IPoint2D) => {
+    const updateMinMax = (p: Point) => {
         minX = Math.min(minX ?? p.x, p.x)
         maxX = Math.max(maxX ?? p.x, p.x)
         minY = Math.min(minY ?? p.y, p.y)
         maxY = Math.max(maxY ?? p.y, p.y)
     }
 
-    const getLineInfo = (n0Idx: number, r0: RotationDirection, n1Idx: number, r1: RotationDirection): ILineInfo => {
-        const line: ILine2D = Line2D.getTangeant(nails[n0Idx].position, nails[n0Idx].diameter, r0, nails[n1Idx].position, nails[n1Idx].diameter, r1)
+    const getLineInfo = (n0Idx: number, r0: RotationDirection, n1Idx: number, r1: RotationDirection): LineInfo => {
+        const line: Line = LineHelper.getTangeant(nails[n0Idx].position, nails[n0Idx].diameter, r0, nails[n1Idx].position, nails[n1Idx].diameter, r1)
         updateMinMax(line.p0)
         updateMinMax(line.p1)
         return { ...line, n0Idx, r0, n1Idx, r1 }
     }
 
     console.log(`worker: calculate tangeant lines`)
-    const lines: ILineInfo[][][] = project.nailMap.lines.map((lines: number[], n0Idx: number) => [
+    const lines: LineInfo[][][] = nailMap.lines.map((lines: number[], n0Idx: number) => [
         lines.map((n1Idx: number) => [
             getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.ClockWise),
             getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.AntiClockWise)
-        ]).reduce((a: ILineInfo[], b: ILineInfo[]) => a.concat(b), []),
+        ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), []),
         lines.map((n1Idx: number) => [
             getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.ClockWise),
             getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.AntiClockWise)
-        ]).reduce((a: ILineInfo[], b: ILineInfo[]) => a.concat(b), []),
+        ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), []),
     ])
 
-    minX = (minX! - project.nailMap.position.x) / project.nailMap.scale
-    maxX = (maxX! - project.nailMap.position.x) / project.nailMap.scale
-    minY = (minY! - project.nailMap.position.y) / project.nailMap.scale
-    maxY = (maxY! - project.nailMap.position.y) / project.nailMap.scale
+    minX = (minX! - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale
+    maxX = (maxX! - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale
+    minY = (minY! - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale
+    maxY = (maxY! - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale
 
     console.log(`worker: calculate pixel lines`)
     /*
     // RAM explode here
-    const pixelLines = lines.map((a0: ILineInfo[][][]) =>
-        a0.map((a1: ILineInfo[][]) => 
-            a1.map((a2: ILineInfo[]) =>
-                a2.map((l: ILineInfo) => ({
+    const pixelLines = lines.map((a0: LineInfo[][][]) =>
+        a0.map((a1: LineInfo[][]) => 
+            a1.map((a2: LineInfo[]) =>
+                a2.map((l: LineInfo) => ({
                     line: l,
                     pixelLine: PixelLine.get({
-                        x: (l.p0.x - project.nailMap.position.x) / project.nailMap.scale - minX!,
-                        y: (l.p0.y - project.nailMap.position.y) / project.nailMap.scale - minY!,
+                        x: (l.p0.x - nailMap.position.x) / nailMap.scale - minX!,
+                        y: (l.p0.y - nailMap.position.y) / nailMap.scale - minY!,
                     }, {
-                        x: (l.p1.x - project.nailMap.position.x) / project.nailMap.scale - minX!,
-                        y: (l.p1.y - project.nailMap.position.y) / project.nailMap.scale - minY!,
+                        x: (l.p1.x - nailMap.position.x) / nailMap.scale - minX!,
+                        y: (l.p1.y - nailMap.position.y) / nailMap.scale - minY!,
                     }, PixelLineMode.Bresenham)
                 })))
             ))*/
 
     // console.log(pixelLines)    
 
-    var result: Array<IStep> = []
+    var result: Array<Step> = []
 
     for (let i = 0; i < project.threads.length; i++) {
         const thread: Thread = project.threads[i]
@@ -112,7 +109,7 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
                     }))
         const data: number[][] = target.map((l: number[]) => l.map((v: number) => { return 0 }))
 
-        var nail: IStep | undefined = {
+        var nail: Step | undefined = {
             nailIndex: 0,
             direction: RotationDirection.ClockWise
         }
@@ -120,20 +117,20 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
         console.log(`worker: thread "${thread.description}" search path`)
         var start = new Date()
         do {
-            let nextNail: IStep | undefined
-            let evaluation: IPixelLineEvaluation | undefined
+            let nextNail: Step | undefined
+            let evaluation: PixelLineEvaluation | undefined
             let indicator: number = 0
 
             for (const l of lines[nail!.nailIndex][nail!.direction]) {
-                const pixelLine: IPixelLine = PixelLine.get({
-                    x: (l.p0.x - project.nailMap.position.x) / project.nailMap.scale - minX! + 2,
-                    y: (l.p0.y - project.nailMap.position.y) / project.nailMap.scale - minY! + 2,
+                const pixelLine: PixelLine = PixelLine.get({
+                    x: (l.p0.x - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale - minX! + 2,
+                    y: (l.p0.y - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale - minY! + 2,
                 }, {
-                    x: (l.p1.x - project.nailMap.position.x) / project.nailMap.scale - minX! + 2,
-                    y: (l.p1.y - project.nailMap.position.y) / project.nailMap.scale - minY! + 2,
+                    x: (l.p1.x - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale - minX! + 2,
+                    y: (l.p1.y - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale - minY! + 2,
                 }, PixelLineMode.Bresenham)
 
-                const e: IPixelLineEvaluation = pixelLine.evaluate(data, target, thread.calculationThickness)
+                const e: PixelLineEvaluation = pixelLine.evaluate(data, target, thread.calculationThickness)
 
                 if (e.value <= indicator)
                     continue
@@ -174,10 +171,10 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
     return result
 }
 
-self.onmessage = async (event: MessageEvent<ICalculatorInput>) => {
+self.onmessage = async (event: MessageEvent<CalculatorInput>) => {
     console.log('🐝 Worker: Message received from main script')
     const data = event.data
-    const result = calculate(data.project, data.imageDatas, data.threads)
+    const result = calculate(data)
     console.log('🐝 Worker: end', result)
     post(CalculatorMessageType.Result, result)
 }

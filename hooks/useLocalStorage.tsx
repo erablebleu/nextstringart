@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react'
 
-export default function useLocalStorage<T>(
+export function useLocalStorage<T>(
     key: string,
     defaultValue: T
 ): [T, Dispatch<SetStateAction<T>>] {

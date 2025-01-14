@@ -1,4 +1,4 @@
-import { ColorOptions, IImageInfo, LuminosityOptions, Thread } from "@/model/project";
+import { ColorOptions, IImageInfo, LuminosityOptions, Thread } from "@/model";
 import React from "react";
 import { Button, Card, CardContent, CardHeader, Grid, Stack, TextField } from "@mui/material";
 import { ImageFilter } from "@/tools/imaging/ImageFilter";

@@ -1,12 +1,10 @@
-import { RotationDirection } from "@/enums/rotationDirection"
-import { IStep, IInstructions, INail } from "@/model/instructions"
-import { IProject, Thread } from "@/model/project"
-import { IPixelLine, IPixelLineEvaluation, IWeightPoint2D, PixelLine, PixelLineMode } from "@/tools/calculation/PixelLine"
-import { ILine2D, Line2D } from "@/tools/geometry/Line2D"
-import { IPoint2D } from "@/tools/geometry/Point2D"
-import { CalculatorMessageType, ICalculatorInput, ICalculatorMessage, ICalculatorProgress } from "./workers"
+import { Step, Instructions, Nail, RotationDirection } from "@/model"
+import { Project, Thread } from "@/model/project"
+import { IPixelLine, PixelLineEvaluation, WeightPoint, PixelLine, PixelLineMode } from "@/tools/calculation/PixelLine"
+import { Line, LineHelper, Point } from "@/tools/geometry"
+import { CalculatorMessageType, CalculatorInput, CalculatorMessage, CalculatorProgress } from "./workers"
 
-interface ILineInfo extends ILine2D {
+type LineInfo = Line & {
     n0Idx: number
     r0: RotationDirection
     n1Idx: number
@@ -14,21 +12,21 @@ interface ILineInfo extends ILine2D {
 }
 
 type WeightLine = {
-    line: ILineInfo
+    line: LineInfo
     s: number // distance to center [-1;1]
     a: number // angle with x [0;PI]
     weight: number
 }
 
 function post(type: CalculatorMessageType, value: any) {
-    const msg: ICalculatorMessage = {
+    const msg: CalculatorMessage = {
         type,
         value
     }
     postMessage(msg)
 }
 
-function postProgress(data: ICalculatorProgress) {
+function postProgress(data: CalculatorProgress) {
     post(CalculatorMessageType.Progress, data)
 }
 
@@ -37,15 +35,15 @@ function postProgress(data: ICalculatorProgress) {
  * a in [0; PI]
  * s in [-1; 1]
  */
-function radon(p0: IPoint2D, p1: IPoint2D): { a: number, s: number } {
+function radon(p0: Point, p1: Point): { a: number, s: number } {
     const a = -Math.atan2(p1.x - p0.x, p1.y - p0.y) + Math.PI
     const s = Math.abs(p1.x * p0.y - p1.y * p0.x) / Math.sqrt(Math.pow(p1.y - p0.y, 2) + Math.pow(p1.x - p0.x, 2))
 
     return a < Math.PI ? { a, s } : { a: a - Math.PI, s: -s }
 }
 
-function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, threads: Array<boolean>): Array<IStep> {
-    const nails: Array<INail> = project.nailMap.nails
+function calculate({project, nailMap, imageDatas, threads} : CalculatorInput): Array<Step> {
+    const nails: Array<Nail> = nailMap.nails
     const HEATMAP_SIZE = 400
 
     let minX: number = 99999999,
@@ -53,32 +51,32 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
         minY: number = 99999999,
         maxY: number = -99999999
 
-    const updateMinMax = (p: IPoint2D) => {
+    const updateMinMax = (p: Point) => {
         minX = Math.min(minX, p.x)
         maxX = Math.max(maxX, p.x)
         minY = Math.min(minY, p.y)
         maxY = Math.max(maxY, p.y)
     }
 
-    const getLineInfo = (n0Idx: number, r0: RotationDirection, n1Idx: number, r1: RotationDirection): ILineInfo => {
-        const line: ILine2D = Line2D.getTangeant(nails[n0Idx].position, nails[n0Idx].diameter, r0, nails[n1Idx].position, nails[n1Idx].diameter, r1)
+    const getLineInfo = (n0Idx: number, r0: RotationDirection, n1Idx: number, r1: RotationDirection): LineInfo => {
+        const line: Line = LineHelper.getTangeant(nails[n0Idx].position, nails[n0Idx].diameter, r0, nails[n1Idx].position, nails[n1Idx].diameter, r1)
         updateMinMax(line.p0)
         updateMinMax(line.p1)
         return { ...line, n0Idx, r0, n1Idx, r1 }
     }
 
     console.log(`worker: calculate tangeant lines`)
-    const lines: ILineInfo[] = project.nailMap.lines.map((lines: number[], n0Idx: number) =>
+    const lines: LineInfo[] = nailMap.lines.map((lines: number[], n0Idx: number) =>
         lines.map((n1Idx: number) => [
             getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.ClockWise),
             // getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.AntiClockWise)
-        ]).reduce((a: ILineInfo[], b: ILineInfo[]) => a.concat(b), [])
+        ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), [])
             .concat(
                 lines.map((n1Idx: number) => [
                     // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.ClockWise),
                     // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.AntiClockWise)
-                ]).reduce((a: ILineInfo[], b: ILineInfo[]) => a.concat(b), []))
-    ).reduce((a: ILineInfo[], b: ILineInfo[]) => a.concat(b), [])
+                ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), []))
+    ).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), [])
 
     const center = {
         x: (maxX + minX) / 2,
@@ -91,10 +89,10 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
     console.log(radius)
 
     // nailMap ref to picture ref
-    minX = (minX! - project.nailMap.position.x) / project.nailMap.scale
-    maxX = (maxX! - project.nailMap.position.x) / project.nailMap.scale
-    minY = (minY! - project.nailMap.position.y) / project.nailMap.scale
-    maxY = (maxY! - project.nailMap.position.y) / project.nailMap.scale
+    minX = (minX! - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale
+    maxX = (maxX! - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale
+    minY = (minY! - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale
+    maxY = (maxY! - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale
 
     console.log(`worker: calculate pixel lines`)
 
@@ -110,7 +108,7 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
     ])
         console.log(`x0:${d.p0.x} y0:${d.p0.y} x1:${d.p1.x} y1:${d.p1.y} ${JSON.stringify(radon(d.p0, d.p1))}`)
 
-    var result: Array<IStep> = []
+    var result: Array<Step> = []
 
     for (let i = 0; i < project.threads.length; i++) {
         const thread: Thread = project.threads[i]
@@ -167,8 +165,8 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
                     y: -p.y * radius + center.y,
                 }))
                 .map(p => ({
-                    x: (p.x - project.nailMap.position.x) / project.nailMap.scale - minX! + 2,
-                    y: (p.y - project.nailMap.position.y) / project.nailMap.scale - minY! + 2,
+                    x: (p.x - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale - minX! + 2,
+                    y: (p.y - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale - minY! + 2,
                 }))
             
             const points = PixelLine.get(p[0], p[1], PixelLineMode.Simple)
@@ -177,7 +175,7 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
 
             heatmap[j] = points.length == 0
                 ? 0 
-                : points.reduce((sum: number, p: IWeightPoint2D) => sum + target[p.x][p.y], 0) / points.length                
+                : points.reduce((sum: number, p: WeightPoint) => sum + target[p.x][p.y], 0) / points.length                
             
             if(j %5693 == 0){
                 console.log(`j:${j} => heat:${heatmap[j]}`)
@@ -195,7 +193,7 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
         console.log(heatmap)
         console.log(`target[${target.length}][${target[0].length}]`)
 
-        const linesWeights: WeightLine[] = lines.map((l: ILineInfo) => {
+        const linesWeights: WeightLine[] = lines.map((l: LineInfo) => {
             const p = [l.p0, l.p1].map(p => ({
                 x:  (p.x - center.x) / radius,
                 y: -(p.y - center.y) / radius,
@@ -208,7 +206,7 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
             }
         })
 
-        const steps: Array<ILineInfo> = []
+        const steps: Array<LineInfo> = []
 
         console.log(`worker: thread "${thread.description}" search path`)
         console.log(linesWeights)
@@ -292,7 +290,7 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
 
         return result
 
-        let step: IStep = {
+        let step: Step = {
             nailIndex: 0,
             direction: RotationDirection.ClockWise,
         }
@@ -346,31 +344,32 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
                 }
             }
 
-            if (index != undefined) {
-                const s = steps[Math.abs(index)]
-                console.log(`step:${step.nailIndex} index:${index} d:${d} s:${s.n0Idx}.${s.n1Idx}`)
+            if (index === undefined) 
+                continue
 
-                if (reverse) {
-                    result.push({
-                        nailIndex: s.n1Idx,
-                        direction: RotationDirection.ClockWise,
-                    })
-                    result.push(step = {
-                        nailIndex: s.n0Idx,
-                        direction: RotationDirection.ClockWise,
-                    })
-                } else {
-                    result.push({
-                        nailIndex: s.n0Idx,
-                        direction: RotationDirection.ClockWise,
-                    })
-                    result.push(step = {
-                        nailIndex: s.n1Idx,
-                        direction: RotationDirection.ClockWise,
-                    })
-                }
-                steps.splice(index, 1)
+            const s = steps[Math.abs(index!)]
+            console.log(`step:${step.nailIndex} index:${index} d:${d} s:${s.n0Idx}.${s.n1Idx}`)
+
+            if (reverse) {
+                result.push({
+                    nailIndex: s.n1Idx,
+                    direction: RotationDirection.ClockWise,
+                })
+                result.push(step = {
+                    nailIndex: s.n0Idx,
+                    direction: RotationDirection.ClockWise,
+                })
+            } else {
+                result.push({
+                    nailIndex: s.n0Idx,
+                    direction: RotationDirection.ClockWise,
+                })
+                result.push(step = {
+                    nailIndex: s.n1Idx,
+                    direction: RotationDirection.ClockWise,
+                })
             }
+            steps.splice(index!, 1)            
         }
 
         postProgress({
@@ -382,10 +381,10 @@ function calculate(project: IProject, imageDatas: Array<Uint8ClampedArray>, thre
     return result
 }
 
-self.onmessage = async (event: MessageEvent<ICalculatorInput>) => {
+self.onmessage = async (event: MessageEvent<CalculatorInput>) => {
     console.log('🐝 Worker: Message received from main script')
     const data = event.data
-    const result = calculate(data.project, data.imageDatas, data.threads)
+    const result = calculate(data)
     console.log('🐝 Worker: end', result)
     post(CalculatorMessageType.Result, result)
 }

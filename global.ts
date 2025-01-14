@@ -1,0 +1,1 @@
+export const DataDirectory = process.env.DATA_DIRECTORY ?? './data'

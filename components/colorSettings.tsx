@@ -1,4 +1,4 @@
-import { ColorOptions } from "@/model/project";
+import { ColorOptions } from "@/model";
 import { Card, CardContent, CardHeader, Checkbox, FormControlLabel, Stack } from "@mui/material";
 import React from "react";
 import NumericInput from "./numericInput";

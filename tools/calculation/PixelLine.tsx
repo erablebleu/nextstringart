@@ -1,18 +1,17 @@
-import { IPoint2D, Point2D } from "../geometry/Point2D"
-import { IVector2D, Vector2D } from "../geometry/Vector2D"
+import { Point } from "../geometry"
 
-export interface IWeightPoint2D extends IPoint2D {
+export type WeightPoint = Point & {
     weight: number
 }
 
-export interface IPixelLineEvaluation {
+export type PixelLineEvaluation = {
     value: number
     apply: () => void
 }
 
 export interface IPixelLine {
-    points: IWeightPoint2D[]
-    evaluate: (data: number[][], target: number[][], factor: number) => IPixelLineEvaluation
+    points: WeightPoint[]
+    evaluate: (data: number[][], target: number[][], factor: number) => PixelLineEvaluation
 }
 
 export enum PixelLineMode {
@@ -22,22 +21,22 @@ export enum PixelLineMode {
 }
 
 export class PixelLine implements IPixelLine {
-    public points: IWeightPoint2D[] = []
+    public points: WeightPoint[] = []
 
-    constructor(data: IWeightPoint2D[]) {
+    constructor(data: WeightPoint[]) {
         this.points = data
     }
 
-    public evaluate(data: number[][], target: number[][], factor: number): IPixelLineEvaluation {
+    public evaluate(data: number[][], target: number[][], factor: number): PixelLineEvaluation {
         const getIndicator = (d: number, t: number, v: number) => t - d //Math.pow(t - d, 2) - Math.pow(t - v, 2)
-        const result: number[] = this.points.map((p: IWeightPoint2D) => Math.min(Math.max(data[p.x][p.y] + factor * p.weight, 0), 1))
+        const result: number[] = this.points.map((p: WeightPoint) => Math.min(Math.max(data[p.x][p.y] + factor * p.weight, 0), 1))
         return {
-            value: this.points.reduce((a: number, p: IWeightPoint2D, index: number) => a + getIndicator(data[p.x][p.y], target[p.x][p.y], result[index]), 0),
-            apply: () => this.points.forEach((p: IWeightPoint2D, index: number) => data[p.x][p.y] = result[index])
+            value: this.points.reduce((a: number, p: WeightPoint, index: number) => a + getIndicator(data[p.x][p.y], target[p.x][p.y], result[index]), 0),
+            apply: () => this.points.forEach((p: WeightPoint, index: number) => data[p.x][p.y] = result[index])
         }
     }
 
-    public static get(p0: IPoint2D, p1: IPoint2D, mode: PixelLineMode = PixelLineMode.Simple): IPixelLine {
+    public static get(p0: Point, p1: Point, mode: PixelLineMode = PixelLineMode.Simple): IPixelLine {
         switch (mode) {
             case PixelLineMode.Simple: return PixelLine.getSimple(p0, p1)
             case PixelLineMode.Bresenham: return PixelLine.getBresenham(p0, p1)
@@ -45,12 +44,12 @@ export class PixelLine implements IPixelLine {
         }
     }
 
-    public static getSimple(p0: IPoint2D, p1: IPoint2D): IPixelLine {        
+    public static getSimple(p0: Point, p1: Point): IPixelLine {        
         var x0: number = p0.x
         var y0: number = p0.y
         var x1: number = p1.x
         var y1: number = p1.y
-        const result: Array<IWeightPoint2D> = []
+        const result: Array<WeightPoint> = []
         const steep: boolean = Math.abs(y1 - y0) > Math.abs(x1 - x0)
         
         if (steep)
@@ -66,7 +65,7 @@ export class PixelLine implements IPixelLine {
         return new PixelLine(result)
     }
 
-    public static getBresenham(p0: IPoint2D, p1: IPoint2D): IPixelLine {
+    public static getBresenham(p0: Point, p1: Point): IPixelLine {
         const fPart: ((value: number) => number) = (value: number) => value - Math.floor(value) + (value > 0 ? 0 : -1)
 
         var x0: number = p0.x
@@ -74,7 +73,7 @@ export class PixelLine implements IPixelLine {
         var x1: number = p1.x
         var y1: number = p1.y
 
-        const result: Array<IWeightPoint2D> = []
+        const result: Array<WeightPoint> = []
         const steep: boolean = Math.abs(y1 - y0) > Math.abs(x1 - x0)
 
         if (steep)
@@ -104,7 +103,7 @@ export class PixelLine implements IPixelLine {
         return new PixelLine(result)
     }
 
-    public static getXiaolinWu(p0: IPoint2D, p1: IPoint2D): IPixelLine {
+    public static getXiaolinWu(p0: Point, p1: Point): IPixelLine {
         const fPart: ((value: number) => number) = (value: number) => value - Math.floor(value)
         const rfPart: ((value: number) => number) = (value: number) => 1 - fPart(value);
 
@@ -113,7 +112,7 @@ export class PixelLine implements IPixelLine {
         var x1: number = p1.x
         var y1: number = p1.y
 
-        const result: IWeightPoint2D[] = []
+        const result: WeightPoint[] = []
         const steep: boolean = Math.abs(y1 - y0) > Math.abs(x1 - x0);
 
         if (steep)

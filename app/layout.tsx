@@ -1,9 +1,9 @@
 import React from "react"
 import MainLayout from "@/components/mainLayout";
 import { Providers } from "./providers";
+import '../styles/global.css'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-
     return (
         <html lang='en' suppressHydrationWarning={true}>
             <head>

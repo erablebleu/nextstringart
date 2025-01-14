@@ -1,4 +1,4 @@
-import { LuminosityOptions } from "@/model/project";
+import { LuminosityOptions } from "@/model";
 import { Card, CardContent, CardHeader, Checkbox, Grid, Slider } from "@mui/material";
 import React from "react";
 import NumericInput from "./numericInput";
