@@ -1,7 +1,7 @@
 'use client'
 
 import { Action } from "@/app/action"
-import useInterval from "@/hooks/useInterval"
+import { useInterval } from "@/hooks"
 import { fetchAndThrow } from "@/tools/fetch"
 import { MachineInfo, MachineJobStatus, MachineStatus } from "@/tools/machine/machineInfo"
 import { CropSquare, Home, Pause, PlayArrow } from "@mui/icons-material"
@@ -88,7 +88,10 @@ export default function (parameters: MachineControlParameters) {
             <Grid item xs={12}>
                 {['tx', 'tz', 'rz'].map(axis => (
                     <Grid key={axis} item container direction='row'>
-                        <ButtonGroup variant="outlined">
+                        <ButtonGroup 
+                            variant="outlined"
+                            disabled={state.status != MachineStatus.Connected}
+                        >
                             {Steps[axis].map((x: number | 'home') => (
                                 <Button key={`k_${x}`} onClick={() => handleMove(axis, x, `${axis}_${x}`)}>{x === 'home' ? <Home /> : x > 0 ? `+${x}` : x}</Button>
                             ))}
