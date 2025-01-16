@@ -59,7 +59,7 @@ export class GCodeGenerator {
 
         const polarPoints: Array<PolarPoint> = this._map.map((nail: Nail, index) => Polar.fromCartesian(nail.position))
 
-        this._referential = new MachineReferential(this._machineSettings, { a: polarPoints[0].a })
+        this._referential = new MachineReferential(this._machineSettings, { rz: polarPoints[0].a })
 
         this._innerRingX = Math.min(...polarPoints.map(p => p.r)) - INNER_RING_MARGIN
     }

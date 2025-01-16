@@ -51,53 +51,106 @@ const Z_ROTATION_PULLEY_RATIO = 4 * 4
 const Z_ROTATION_STEPS_PER_UNIT = 16
 const Z_ROTATION_UNITS_PER_RAD = Z_ROTATION_STEP_COUNT * Z_ROTATION_PULLEY_RATIO / (Z_ROTATION_STEPS_PER_UNIT * 2 * Math.PI) // units per rad
 
+type AxisTransform = (value: number) => number
+
+type Axis = {
+    value: number,
+    name: string,
+    motorLabel: string,
+    minValue?: number,
+    maxValue?: number,
+    toM: AxisTransform, // to machine coordinate
+    toR: AxisTransform, // to ref coordinate
+}
+
 export class MachineReferential {
-    private _x_min: number
-    private _x_max: number
-    private _a: number = 0
-    private _x: number = 0
-    private _z: number = 0
+    private readonly _settings: MachineSettings
+    private _tx: Axis
+    private _tz: Axis
+    private _rz: Axis
 
-    constructor(settings: MachineSettings, startOptions: { a?: number, x?: number, z?: number } = {}) {
-        this._x_min = settings.radius - X_MAX
-        this._x_max = settings.radius
-
-        this._a = startOptions.a ?? 0
-        this._x = startOptions.x ?? settings.radius
-        this._z = startOptions.z ?? 0
+    constructor(settings: MachineSettings, startOptions: { rz?: number, tx?: number, tz?: number } = {}) {
+        this._settings = settings
+        this._tx = {
+            value: startOptions.tx ?? this._settings.radius,
+            name: 'tx',
+            motorLabel: 'Y',
+            toM: v => this._settings.radius - v,
+            toR: v => this._settings.radius - v,
+            minValue: this._settings.radius - X_MAX,
+            maxValue: this._settings.radius
+        }
+        this._tz = {
+            value: startOptions.tz ?? 0,
+            name: 'tz',
+            motorLabel: 'Z',
+            toM: v => Math.acos(1 - 2 * v / (Z_TRANSLATION_MAX - Z_TRANSLATION_MIN)) * Z_TRANSLATION_STEP_COUNT / 2 / Math.PI / Z_TRANSLATION_STEP_PER_UNIT,
+            toR: v => (1 - Math.cos(v / (Z_TRANSLATION_STEP_COUNT / 2 / Math.PI / Z_TRANSLATION_STEP_PER_UNIT))) * (Z_TRANSLATION_MAX - Z_TRANSLATION_MIN) / 2,
+            minValue: Z_TRANSLATION_MIN,
+            maxValue: Z_TRANSLATION_MAX,
+        }
+        this._rz = {
+            value: startOptions.rz ?? 0,
+            name: 'rz',
+            motorLabel: 'X',
+            toM: v => v * Z_ROTATION_UNITS_PER_RAD,
+            toR: v => v / Z_ROTATION_UNITS_PER_RAD,
+        }
     }
 
-    public translateZTo(t_z: number): number {
-        if (t_z < Z_TRANSLATION_MIN || t_z > Z_TRANSLATION_MAX)
-            throw Error(`Target is outside of the machine: z=${t_z}, mechanical limits are [${Z_TRANSLATION_MIN};${Z_TRANSLATION_MAX}]`)
+    public getRZ(): number { return this._rz.value }
+    public getTX(): number { return this._tx.value }
+    public getTZ(): number { return this._tz.value }
+    public homeRZ() { this._rz.value = 0 }
+    public homeTX() { this._tx.value = this._settings.radius }
+    public homeTZ() { this._tz.value = 0 }
 
-        t_z = Math.acos(1 - 2 * t_z / (Z_TRANSLATION_MAX - Z_TRANSLATION_MIN)) * Z_TRANSLATION_STEP_COUNT / 2 / Math.PI / Z_TRANSLATION_STEP_PER_UNIT
-        const d_z = t_z - this._z // relative positionning
-        const m_z = Number(d_z.toFixed(3)) // mechanical coordinate
+    public translateZ(d_tz: number): number {
+        return this.translateZTo(this._tz.value + d_tz)
+    }
+    public translateZTo(tz: number): number {
+        this.validate(this._tz, tz)
 
-        this._z += m_z
+        const m_0 = this._tz.toM(this._tz.value)
+        const m_1 = this._tz.toM(tz)
+        const m_d = Number((m_1 - m_0).toFixed(3))
 
-        return m_z
+        this._tz.value = this._tz.toR(m_0 + m_d)
+
+        return m_d
     }
 
-    public translateXTo(t_x: number): number {
-        if (t_x < this._x_min || t_x > this._x_max)
-            throw Error(`Target is outside of the machine: x=${t_x}, mechanical limits are [${this._x_min};${this._x_max}]`)
+    public translateX(d_tx: number): number {
+        return this.translateXTo(this._tx.value + d_tx)
+    }
+    public translateXTo(tx: number): number {
+        this.validate(this._tx, tx)
 
-        const d_x = t_x - this._x // relative positionning
-        const m_x = Number((-d_x).toFixed(3)) // mechanical coordinate
+        const m_0 = this._tx.toM(this._tx.value)
+        const m_1 = this._tx.toM(tx)
+        const m_d = Number((m_1 - m_0).toFixed(3))
 
-        this._x += -m_x
+        this._tx.value = this._tx.toR(m_0 + m_d)
 
-        return m_x
+        return m_d
     }
 
-    public rotateZTo(t_a: number): number {
-        const d_a = Polar.normalizeAngle(t_a - this._a) // relative positionning
-        const m_a = Number((d_a * Z_ROTATION_UNITS_PER_RAD).toFixed(3)) // mechanical coordiante
+    public rotateZ(d_rz: number): number {
+        return this.rotateZTo(this._rz.value + d_rz)
+    }
+    public rotateZTo(rz: number): number {
+        this.validate(this._rz, rz)
 
-        this._a += m_a / Z_ROTATION_UNITS_PER_RAD
+        const r_d = Polar.normalizeAngle(rz - this._rz.value)
+        const m_d = Number(this._rz.toM(r_d).toFixed(3))
+        this._rz.value = Polar.normalizeAngle(this._rz.value + this._rz.toR(m_d))
 
-        return m_a
+        return m_d
+    }
+
+    private validate(axis: Axis, value: number) {
+        if (axis.minValue != undefined && value < axis.minValue
+            || axis.maxValue != undefined && value > axis.maxValue)
+            throw Error(`Axis ${axis.name} (motor ${axis.motorLabel}): target is outside of the machine: ${value}, mechanical limits are [${axis.minValue};${axis.maxValue}]`)
     }
 }

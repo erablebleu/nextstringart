@@ -10,9 +10,9 @@ import { enqueueSnackbar } from "notistack"
 import React from "react"
 
 const Steps = {
-    tx: [-10, -1, 'home', 1, 10],
-    tz: [-10, -1, 'home', 1, 10],
-    rz: [-10, -1, 'home', 1, 10],
+    tx: [-100, -10, -1, 'home', 1, 10, 100],
+    tz: [-10, -5, -1, 'home', 1, 5, 10],
+    rz: [-10, -5, -1, 'home', 1, 5, 10],
 }
 
 export type MachineControlParameters = {
@@ -30,7 +30,6 @@ export default function (parameters: MachineControlParameters) {
         }
         catch { }
     }, 1000)
-
 
     async function handleMove(axis: string, value: number | 'home', name: string) {
         const body = JSON.stringify({
@@ -96,7 +95,7 @@ export default function (parameters: MachineControlParameters) {
                                 <Button key={`k_${x}`} onClick={() => handleMove(axis, x, `${axis}_${x}`)}>{x === 'home' ? <Home /> : x > 0 ? `+${x}` : x}</Button>
                             ))}
                         </ButtonGroup>
-                        <Typography margin={1}>tX = {state[axis]}</Typography>
+                        <Typography margin={1}>{axis} = {state[axis].toFixed(2)}</Typography>
                     </Grid>
                 ))}
             </Grid>

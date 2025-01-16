@@ -5,6 +5,7 @@ import { MachineMoveInstruction } from './machineMoveInstruction'
 import { EventEmitter } from 'stream'
 import { PromiseWithResolvers } from '../promiseWithResolver'
 import { GCodeGenerator } from './gcode/generator'
+import { MachineReferential } from './referential'
 
 export class SerialMachine {
     private _settings?: MachineSettings
@@ -14,6 +15,7 @@ export class SerialMachine {
 
     private _status: MachineStatus = MachineStatus.Disconnected
     private _currentJob?: MachineJob
+    private _referential?: MachineReferential
 
     public getCurrentJob = () => this._currentJob
 
@@ -61,9 +63,10 @@ export class SerialMachine {
             this._settings = settings
             this._settings.delimiter ??= '\n'
             this._port = new SerialPort({
-                ...settings,
+                ...this._settings,
                 autoOpen: false,
             })
+            this._referential = new MachineReferential(this._settings)
 
             this._port.on('data', this.onData.bind(this))
         }
@@ -151,9 +154,9 @@ export class SerialMachine {
 
     public getInfo(): MachineInfo {
         return {
-            tx: 0,
-            tz: 0,
-            rz: 0,
+            tx: this._referential?.getTX() ?? 0,
+            tz: this._referential?.getTZ() ?? 0,
+            rz: this._referential?.getRZ() ?? 0,
             status: this._status,
             waitingJobs: this._jobQueue.length,
             job: this._currentJob?.getInfo(),
@@ -161,40 +164,57 @@ export class SerialMachine {
     }
 
     public async move(instruction: MachineMoveInstruction) {
-        const result: Array<string> = []
+        const result: Array<string> = [
+            'G91'
+        ]
 
         const isHome = (value?: number | 'home') => {
             return value === 'home'
         }
 
         const getMove = (value?: number | 'home') => {
-            return value === 'home'
+            if(value === 'home') 
+                return
+
+            return value
         }
 
         const home = {
-            x: isHome(instruction.rz),
-            y: isHome(instruction.tx),
-            z: isHome(instruction.tz),
+            rz: isHome(instruction.rz),
+            tx: isHome(instruction.tx),
+            tz: isHome(instruction.tz),
         }
 
         const move = {
-            x: getMove(instruction.rz),
-            y: getMove(instruction.rz),
-            z: getMove(instruction.rz),
+            rz: getMove(instruction.rz),
+            tx: getMove(instruction.tx),
+            tz: getMove(instruction.tz),
         }
 
-        if (home.x || home.y || home.z)
-            result.push('G28'
-                + (home.x ? ' X' : '')
-                + (home.y ? ' Y' : '')
-                + (home.z ? ' Z' : '')
-            )
+        // home
+        let strHome: string = ''
 
-        if (move.x || move.y || move.z)
+        if (home.rz) {
+            strHome += ' X'
+            this._referential!.homeRZ()
+        }
+        if (home.tx) {
+            strHome += ' Y'
+            this._referential!.homeTX()
+        }
+        if (home.tz) {
+            strHome += ' Z'
+            this._referential!.homeTZ()
+        }
+        if(strHome != '') {
+            result.push('G28' + strHome)
+        }
+
+        if (move.tx || move.tz || move.rz)
             result.push('G0'
-                + (move.x ? `X${move.x}` : '')
-                + (move.y ? `Y${move.y}` : '')
-                + (move.z ? `Z${move.z}` : '')
+                + (move.rz ? `X${this._referential!.rotateZ(move.rz)}` : '')
+                + (move.tx ? `Y${this._referential!.translateX(move.tx)}` : '')
+                + (move.tz ? `Z${this._referential!.translateZ(move.tz)}` : '')
             )
 
         this.enqueueJob(result, { autoStart: true, name: instruction.name })

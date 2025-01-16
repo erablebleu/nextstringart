@@ -14,7 +14,7 @@ run()
 
 async function run() {
     const machineSettings: MachineSettings = {
-        path: '/dev/ttyUSB1', 
+        path: '/dev/ttyUSB0', 
         baudRate: 250000,
         radius: 481.5
     }
