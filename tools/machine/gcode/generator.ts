@@ -52,14 +52,14 @@ export class GCodeGenerator {
     private _center: Point = { x: 0, y: 0 }
     private _innerRingX: number
 
-    constructor(map: Nail[], machineSettings: MachineSettings, gCodeSettings: GCodeSettings) {
+    constructor(map: Nail[], machineSettings: MachineSettings, gCodeSettings: GCodeSettings, referential?: MachineReferential) {
         this._machineSettings = machineSettings
         this._gCodeSettings = gCodeSettings
         this._map = map
 
         const polarPoints: Array<PolarPoint> = this._map.map((nail: Nail, index) => Polar.fromCartesian(nail.position))
 
-        this._referential = new MachineReferential(this._machineSettings, { rz: polarPoints[0].a })
+        this._referential = referential ?? new MachineReferential(this._machineSettings, { rz: polarPoints[0].a })
 
         this._innerRingX = Math.min(...polarPoints.map(p => p.r)) - INNER_RING_MARGIN
     }

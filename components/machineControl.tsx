@@ -15,12 +15,8 @@ const Steps = {
     rz: [-10, -5, -1, 'home', 1, 5, 10],
 }
 
-export type MachineControlParameters = {
-    machineInfo: MachineInfo
-}
-
-export default function (parameters: MachineControlParameters) {
-    const [state, setState] = React.useState<MachineInfo>(parameters.machineInfo)
+export default function () {
+    const [state, setState] = React.useState<MachineInfo | undefined>()
 
     useInterval(async () => {
         try {
@@ -45,6 +41,12 @@ export default function (parameters: MachineControlParameters) {
             console.error(e)
             enqueueSnackbar(`Error sending move order: ${body}`, { variant: 'error' })
         }
+    }
+
+    if(!state) {
+        return <React.Fragment>
+            Loading
+        </React.Fragment>
     }
 
     return (

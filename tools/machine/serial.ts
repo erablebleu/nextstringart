@@ -18,6 +18,7 @@ export class SerialMachine {
     private _referential?: MachineReferential
 
     public getCurrentJob = () => this._currentJob
+    public getSettings = () => this._settings
 
     private onData(data: any) {
         this._incommingData += data.toString('ascii')
