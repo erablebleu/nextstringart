@@ -18,16 +18,16 @@ export default function () {
         router.push(`/project/${item.id}`)
     }
 
-    if (isLoading)
+    if (isLoading || !data)
         return <React.Fragment>Loading ...</React.Fragment>
 
     return (
         <List sx={{ flexGrow: 1, overflow: 'auto' }}>
-            {!isLoading && data.map((item: Project & Entity) => (
+            {!isLoading && data.sort((a, b) => a.name.localeCompare(b.name)).map((item: Project & Entity) => (
                 <ListItem key={item.id} disablePadding>
                     <ListItemButton
                         onClick={() => handleSelect(item)}>
-                        <ListItemText primary={item.name ?? item.id} />
+                        <ListItemText primary={item.name ?? item.id} secondary={item.description} />
                     </ListItemButton>
                 </ListItem>
             ))}

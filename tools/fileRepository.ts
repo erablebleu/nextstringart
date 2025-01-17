@@ -34,7 +34,6 @@ export class FileRepository<T> {
 
     public async read(id: string): Promise<T & Entity> {
         const filePath = this.getFilePath(id)
-        console.log('readfile: ' + filePath)
         const data = await File.readJSON<T>(filePath)
 
         return { ...data, id }

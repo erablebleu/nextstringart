@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { join } from 'path';
 import { MachineJob, SerialMachine } from '../tools/machine/serial'
-import { GCodeGenerator } from '@/tools/machine/gcode/generator'
+import { GCodeGenerator, GCodeSettings } from '@/tools/machine/gcode/generator'
 import { MachineSettings } from '@/tools/machine/settings'
 import { Polar } from '@/tools/geometry/polar';
 import { Await } from '@/tools/await';
@@ -46,7 +46,8 @@ async function run() {
             .map(x => `${x.position.x},${x.position.y},${x.polar.a},${x.polar.r}`).join('\r\n'),
         { flag: 'w' })
 
-    const gCodeSettings = {
+    const gCodeSettings: GCodeSettings = {
+        zMove: 15,
         zLow: 35,
         zHigh: 20,
     }

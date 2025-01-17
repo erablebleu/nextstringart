@@ -1,9 +1,8 @@
-import { CircleFrame, PolygonFrame } from "./frame"
-import { Step } from "./instructions"
 import { NailMapTransformation } from "./nailMap"
 
 export type Project = {
-    name: string
+    name?: string
+    description?: string
     frameId: string
     nailMapTransformation: NailMapTransformation
     threads: Thread[]

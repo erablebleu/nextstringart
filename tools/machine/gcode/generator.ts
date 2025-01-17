@@ -31,11 +31,10 @@ const EndGCode = [
 ]
 
 const INNER_RING_MARGIN = 100
-const LINEAR_TRAJECTORY_LENGTH = 10
-const LINEAR_TRAJECTORY_STEP_COUNT = 20
-const ARC_TRAJCTORY_STEP_COUNT = 20
+const LINEAR_TRAJECTORY_POINTS_PER_MM = 0.5
 
 export type GCodeSettings = {
+    zMove: number
     zLow: number
     zHigh: number
 }
@@ -104,7 +103,10 @@ export class GCodeGenerator {
         this.moveToPolar(Polar.fromCartesian(p))
     }
 
-    private buildLinearTrajectory(p0: Point, p1: Point, stepCount: number) {
+    private buildLinearTrajectory(p0: Point, p1: Point) {
+        const len = VectorHelper.len(PointHelper.substract(p0, p1))
+        const stepCount = 1 + Math.floor(LINEAR_TRAJECTORY_POINTS_PER_MM * len)
+
         if (stepCount <= 0) throw Error('stepCount must be positive')
 
         const v: Vector = VectorHelper.scale(PointHelper.substract(p0, p1), 1 / stepCount)
@@ -174,7 +176,7 @@ export class GCodeGenerator {
         this.moveToPolar({ r: this._innerRingX })
         this.addMetadata('command', 'pause')
 
-        for(let i = 0; i < steps.length; i++) {
+        for (let i = 0; i < steps.length; i++) {
             const step: Step = steps[i]
             const node: Point = this._map[step.nailIndex].position
 
@@ -182,30 +184,24 @@ export class GCodeGenerator {
             const exitTupleNode: Point = step.direction == RotationDirection.ClockWise ? this.getNextNail(step.nailIndex) : this.getPreviousNail(step.nailIndex)
 
             const entry_d: number = Cartesian.distance(entryTupleNode, node) / 2
-            const entry_d0 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(30, 2))
+            const entry_d0 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(10, 2))
             const entry_d1 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(10, 2))
-            const entry_d2 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(10, 2))
             const entry_p0 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(entryTupleNode, node, entry_d0), this._center)
-            const entry_p1 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(entryTupleNode, node, entry_d1), this._center)
-            const entry_p2 = Cartesian.getFurthestPoint(Cartesian.getEquidistantPoints(entryTupleNode, node, entry_d2), this._center)
+            const entry_p1 = Cartesian.getFurthestPoint(Cartesian.getEquidistantPoints(entryTupleNode, node, entry_d1), this._center)
             const entry_p0_polar = Polar.fromCartesian(entry_p0)
 
             const exit_d: number = Cartesian.distance(node, exitTupleNode) / 2
             const exit_d0 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(10, 2))
             const exit_d1 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(10, 2))
-            const exit_d2 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(30, 2))
             const exit_p0 = Cartesian.getFurthestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d0), this._center)
             const exit_p1 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d1), this._center)
-            const exit_p2 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d2), this._center)
 
             // z move
             entry_p0.z = this._gCodeSettings.zHigh
-            entry_p1.z = this._gCodeSettings.zLow
-            entry_p2.z = this._gCodeSettings.zLow
+            entry_p1.z = this._gCodeSettings.zHigh
 
             exit_p0.z = this._gCodeSettings.zLow
             exit_p1.z = this._gCodeSettings.zLow
-            exit_p2.z = this._gCodeSettings.zHigh
 
             this.displayMessage(`step ${i + 1}/${steps.length}`)
             this.addMetadata('step', `${i + 1}/${steps.length}`)
@@ -214,11 +210,11 @@ export class GCodeGenerator {
             this.moveToPolar({ a: entry_p0_polar.a })
             this.moveToPolar({ r: entry_p0_polar.r })
             this.setSpeedProfile(SpeedProfile.Slow)
-            this.buildLinearTrajectory(entry_p0, entry_p1, 20)
-            this.buildLinearTrajectory(entry_p1, entry_p2, 20)
+            this.moveToPolar({ z: this._gCodeSettings.zHigh })
+            this.buildLinearTrajectory(entry_p0, entry_p1)
             this.moveToCartesian(exit_p0)
-            this.buildLinearTrajectory(exit_p0, exit_p1, 20)
-            this.buildLinearTrajectory(exit_p1, exit_p2, 20)
+            this.buildLinearTrajectory(exit_p0, exit_p1)
+            this.moveToPolar({ z: this._gCodeSettings.zMove })
         }
 
         this.setSpeedProfile(SpeedProfile.Fast)

@@ -5,6 +5,7 @@ export enum FrameShape {
 
 export type Frame = {
     name?: string
+    description?: string
     shape: FrameShape
     nailCount: number
     nailDiameter: number
