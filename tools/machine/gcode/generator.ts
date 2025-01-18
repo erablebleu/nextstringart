@@ -104,15 +104,16 @@ export class GCodeGenerator {
     }
 
     private buildLinearTrajectory(p0: Point, p1: Point) {
-        const len = VectorHelper.len(PointHelper.substract(p0, p1))
+        const v = VectorHelper.fromPoints(p0, p1)
+        const len = VectorHelper.len(v)
         const stepCount = 1 + Math.floor(LINEAR_TRAJECTORY_POINTS_PER_MM * len)
 
         if (stepCount <= 0) throw Error('stepCount must be positive')
 
-        const v: Vector = VectorHelper.scale(PointHelper.substract(p0, p1), 1 / stepCount)
+        const vStep: Vector = VectorHelper.scale(v, 1 / stepCount)
 
         for (let i = 0; i < stepCount - 1; i++) {
-            p0 = PointHelper.add(p0, v)
+            p0 = PointHelper.add(p0, vStep)
             this.moveToCartesian(p0)
         }
 
@@ -165,7 +166,7 @@ export class GCodeGenerator {
     }
 
     private addMetadata(key: string, value: string) {
-        this.addComment(`;md.${key}:${value}`)
+        this.addComment(`md.${key}:${value}`)
     }
 
     private setSpeedProfile(profile: SpeedProfile) {
@@ -174,6 +175,7 @@ export class GCodeGenerator {
 
     public addSteps(steps: Step[]) {
         this.moveToPolar({ r: this._innerRingX })
+        this.displayMessage(`waiting start command`)
         this.addMetadata('command', 'pause')
 
         for (let i = 0; i < steps.length; i++) {
@@ -193,8 +195,10 @@ export class GCodeGenerator {
             const exit_d: number = Cartesian.distance(node, exitTupleNode) / 2
             const exit_d0 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(10, 2))
             const exit_d1 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(10, 2))
+            const exit_d2 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(30, 2))
             const exit_p0 = Cartesian.getFurthestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d0), this._center)
             const exit_p1 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d1), this._center)
+            const exit_p2 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d2), this._center)
 
             // z move
             entry_p0.z = this._gCodeSettings.zHigh
@@ -202,9 +206,11 @@ export class GCodeGenerator {
 
             exit_p0.z = this._gCodeSettings.zLow
             exit_p1.z = this._gCodeSettings.zLow
+            exit_p2.z = this._gCodeSettings.zMove
 
             this.displayMessage(`step ${i + 1}/${steps.length}`)
             this.addMetadata('step', `${i + 1}/${steps.length}`)
+            this.addMetadata('target_nail', `${step.nailIndex}`)
             this.setSpeedProfile(SpeedProfile.Fast)
             this.moveToPolar({ r: this._innerRingX })
             this.moveToPolar({ a: entry_p0_polar.a })
@@ -214,7 +220,7 @@ export class GCodeGenerator {
             this.buildLinearTrajectory(entry_p0, entry_p1)
             this.moveToCartesian(exit_p0)
             this.buildLinearTrajectory(exit_p0, exit_p1)
-            this.moveToPolar({ z: this._gCodeSettings.zMove })
+            this.buildLinearTrajectory(exit_p1, exit_p2)
         }
 
         this.setSpeedProfile(SpeedProfile.Fast)

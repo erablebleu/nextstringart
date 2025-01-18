@@ -70,6 +70,7 @@ export class SerialMachine {
             this._referential = new MachineReferential(this._settings)
 
             this._port.on('data', this.onData.bind(this))
+            this.tryStartJob()
         }
 
         if (!this._port || !this._settings)
@@ -110,6 +111,7 @@ export class SerialMachine {
     }
 
     public enqueueJob(data: Array<string>, options?: MachineJobOptions): MachineJob {
+        console.log(`enqueue job ${options?.name}`)
         const job = new MachineJob(data, options)
         this._jobQueue.push(job)
 
@@ -123,14 +125,16 @@ export class SerialMachine {
             || this._currentJob
             || this._jobQueue.length <= 0)
             return
-
+        
         const job: MachineJob = this._jobQueue[0]
         this._jobQueue.splice(0, 1)
         this._currentJob = job
+        console.log(`set current job ${job.name}`)
 
         if (!job.autoStart)
             return
 
+        console.log(`start job ${job.name}`)
         this._currentJob.event.addListener('status', this.onJobStatusChanged.bind(this))
         this._currentJob.startOrResume()
     }
@@ -249,14 +253,14 @@ export class MachineJob {
     private _status: MachineJobStatus = MachineJobStatus.Pending
     private _commandAck: boolean = false
 
-    public readonly autoStart?: boolean
-    public readonly name?: string
+    public readonly autoStart: boolean
+    public readonly name: string
     public readonly event: EventEmitter = new EventEmitter()
 
     constructor(data: Array<string>, options?: MachineJobOptions) {
         this._data = [...data]
-        this.autoStart = options?.autoStart
-        this.name = options?.name
+        this.autoStart = options?.autoStart ?? false
+        this.name = options?.name ?? crypto.randomUUID()
         this._lineCount = this._data.length
         this._commandCount = this._data.filter(l => !l.startsWith(';')).length
     }
@@ -317,7 +321,8 @@ export class MachineJob {
                     case 'command':
                         switch (md.groups.value) {
                             case 'pause':
-                                this.setStatus(MachineJobStatus.Finished)
+                                console.log(`job ${this.name}: pause`)
+                                this.setStatus(MachineJobStatus.Paused)
                                 break
                         }
                         break

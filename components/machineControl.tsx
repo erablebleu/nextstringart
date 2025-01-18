@@ -1,22 +1,35 @@
 'use client'
 
 import { Action } from "@/app/action"
-import { useInterval } from "@/hooks"
+import { useInterval, useLocalStorage } from "@/hooks"
 import { fetchAndThrow } from "@/tools/fetch"
 import { MachineInfo, MachineJobStatus, MachineStatus } from "@/tools/machine/machineInfo"
-import { CropSquare, Home, Pause, PlayArrow } from "@mui/icons-material"
-import { Button, ButtonGroup, Grid, Typography } from "@mui/material"
+import { Add, CropSquare, Home, Pause, PlayArrow, Remove } from "@mui/icons-material"
+import { Box, Button, ButtonGroup, Grid, MenuItem, Select, Stack, Typography } from "@mui/material"
 import { enqueueSnackbar } from "notistack"
 import React from "react"
 
-const Steps = {
-    tx: [-100, -10, -1, 'home', 1, 10, 100],
-    tz: [-10, -5, -1, 'home', 1, 5, 10],
-    rz: [-10, -5, -1, 'home', 1, 5, 10],
+const Axis = {
+    tx: {
+        steps: [1, 10, 100],
+    },
+    tz: {
+        steps: [1, 5, 10],
+    },
+    rz: {
+        steps: [0.1, 1, 5, 10, 45, 60],
+        convert: (v: number) => v * Math.PI / 180,
+        format: (v: number) => v * 180 / Math.PI,
+    },
 }
 
 export default function () {
     const [state, setState] = React.useState<MachineInfo | undefined>()
+    const [step, setStep] = useLocalStorage('machine.control.step', {
+        tx: 1,
+        tz: 1,
+        rz: 1,
+    })
 
     useInterval(async () => {
         try {
@@ -27,9 +40,9 @@ export default function () {
         catch { }
     }, 1000)
 
-    async function handleMove(axis: string, value: number | 'home', name: string) {
+    async function handleMove(axis: string, value: number | 'home') {
         const body = JSON.stringify({
-            name,
+            name: `${axis}_${value}`,
             [axis]: value
         })
 
@@ -43,31 +56,50 @@ export default function () {
         }
     }
 
-    if(!state) {
+    async function handleHome(axis: string) {
+        handleMove(axis, 'home')
+    }
+
+    async function handleMinus(axis: string) {
+        const value: number = step[axis]
+        handleMove(axis, Axis[axis].convert?.(value) ?? value)
+    }
+
+    async function handlePlus(axis: string) {
+        const value: number = step[axis]
+        handleMove(axis, Axis[axis].convert?.(value) ?? value)
+    }
+
+    async function handleStepChange(axis: string, value: number) {
+        setStep({
+            ...step,
+            [axis]: value
+        })
+    }
+
+    if (!state) {
         return <React.Fragment>
             Loading
         </React.Fragment>
     }
 
     return (
-        <Grid container spacing={2}>
+        <Stack spacing={5}>
 
-            <Grid item xs={12}>
-                <ButtonGroup>
-                    <Button
-                        disabled={state.status != MachineStatus.Disconnected}
-                        onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/connect', { method: 'POST' }))}>Connect</Button>
-                    <Button
-                        disabled={state.status == MachineStatus.Disconnected}
-                        onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/disconnect', { method: 'POST' }))} >Disconnect</Button>
-                </ButtonGroup>
-            </Grid>
+            <ButtonGroup>
+                <Button
+                    disabled={state.status != MachineStatus.Disconnected}
+                    onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/connect', { method: 'POST' }))}>Connect</Button>
+                <Button
+                    disabled={state.status == MachineStatus.Disconnected}
+                    onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/disconnect', { method: 'POST' }))} >Disconnect</Button>
+            </ButtonGroup>
 
-            <Grid item xs={12} container direction='row' >
+            <Stack direction='row'>
                 <ButtonGroup disabled={!state.job}>
                     <Button
                         disabled={state.job?.status == MachineJobStatus.Running}
-                        onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/job/sartorresume', { method: 'POST' }))}>
+                        onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/job/startorresume', { method: 'POST' }))}>
                         <PlayArrow />
                     </Button>
                     <Button
@@ -76,7 +108,6 @@ export default function () {
                         <Pause />
                     </Button>
                     <Button
-                        disabled={state.job?.status != MachineJobStatus.Running}
                         onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/job/cancel', { method: 'POST' }))}>
                         <CropSquare />
                     </Button>
@@ -84,23 +115,47 @@ export default function () {
                 {state.job && <Typography margin={1}>
                     {state.job.name}: {MachineJobStatus[state.job.status]} {state.job.commandIndex} / {state.job.commandCount}
                 </Typography>}
-            </Grid>
+            </Stack>
 
-            <Grid item xs={12}>
+            <Stack spacing={1}>
                 {['tx', 'tz', 'rz'].map(axis => (
-                    <Grid key={axis} item container direction='row'>
-                        <ButtonGroup 
-                            variant="outlined"
-                            disabled={state.status != MachineStatus.Connected}
-                        >
-                            {Steps[axis].map((x: number | 'home') => (
-                                <Button key={`k_${x}`} onClick={() => handleMove(axis, x, `${axis}_${x}`)}>{x === 'home' ? <Home /> : x > 0 ? `+${x}` : x}</Button>
-                            ))}
+                    <Stack key={axis} direction='row' spacing={1}>
+                        <ButtonGroup
+                            size="small">
+                            <Button
+                                onClick={() => handleHome(axis)}>
+                                <Home />
+                            </Button>
                         </ButtonGroup>
-                        <Typography margin={1}>{axis} = {state[axis].toFixed(2)}</Typography>
-                    </Grid>
+                        <ButtonGroup
+                            size="small">
+                            <Button
+                                onClick={() => handleMinus(axis)}>
+                                <Remove />
+                            </Button>
+                            <Select
+                                size="small"
+                                value={step[axis]}
+                                sx={{ width: '80px' }}
+                                onChange={(e) => handleStepChange(axis, e.target.value as number)}
+                            >
+                                {Axis[axis].steps.map((x: number | 'home') => (
+                                    <MenuItem key={`k_${x}`} value={x}>{x}</MenuItem>
+                                ))}
+                            </Select>
+                            <Button
+                                onClick={() => handlePlus(axis)}>
+                                <Add />
+                            </Button>
+                        </ButtonGroup>
+
+                        <Typography
+                            alignContent='center'>
+                            {axis}: {(Axis[axis].format?.(state[axis]) ?? state[axis]).toFixed(2)}
+                        </Typography>
+                    </Stack>
                 ))}
-            </Grid>
-        </Grid>
+            </Stack>
+        </Stack>
     )
 }

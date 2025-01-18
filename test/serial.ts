@@ -5,7 +5,7 @@ import { GCodeGenerator, GCodeSettings } from '@/tools/machine/gcode/generator'
 import { MachineSettings } from '@/tools/machine/settings'
 import { Polar } from '@/tools/geometry/polar';
 import { Await } from '@/tools/await';
-import { Step, NailMap, RotationDirection, NailMapHelper, FrameShape } from '@/model';
+import { Step, Frame, RotationDirection, NailMapHelper, FrameShape, PolygonFrame } from '@/model';
 
 const outDirectory = join(__dirname, 'out')
 const stdin = process.openStdin()
@@ -19,23 +19,16 @@ async function run() {
         radius: 481.5
     }
 
-    // G
-    // const nailMap = NailMap.fromPolygon({
-    //     nailCount: 294,
-    //     nailDiameter: 1.8,
-    //     edgeCount: 6,
-    //     excludeVertex: true,
-    //     diameter: 690
-    // })
-
-    const nailMap = NailMapHelper.get({
+    const frame: PolygonFrame = {
         shape: FrameShape.polygon,
-        nailCount: 384,
+        nailCount: 390,
         nailDiameter: 1.8,
         edgeCount: 6,
         excludeVertex: false,
         diameter: 910
-    })
+    }
+
+    const nailMap = NailMapHelper.get(frame)
 
     if (!fs.existsSync(outDirectory))
         fs.mkdirSync(outDirectory)
@@ -47,15 +40,15 @@ async function run() {
         { flag: 'w' })
 
     const gCodeSettings: GCodeSettings = {
-        zMove: 15,
-        zLow: 35,
-        zHigh: 20,
+        zMove: 23,
+        zHigh: 29,
+        zLow: 33,
     }
     const gCodeGenerator = new GCodeGenerator(nailMap.nails, machineSettings, gCodeSettings)
 
     const steps: Array<Step> = [
-        ...Array.from({length: 100}, (_, index) => ({ 
-            nailIndex: (89 + (index * 63)) % 384, 
+        ...Array.from({length: 6 * 65}, (_, index) => ({ 
+            nailIndex: ((1 + index) * (frame.nailCount / frame.edgeCount + 1)) % frame.nailCount, 
             direction: RotationDirection.ClockWise 
         }))
         // { nailIndex: 0, direction: RotationDirection.ClockWise },
@@ -89,19 +82,19 @@ async function run() {
     fs.writeFileSync(join(outDirectory, 'serial.gcode'), gCode.join('\n'), { flag: 'w' })
 
     const machine = new SerialMachine()
-    const machineJob: MachineJob = machine.enqueueJob(gCode)
+    const machineJob: MachineJob = machine.enqueueJob(gCode, {autoStart: true})
 
     stdin.addListener("data", function (data) {
         switch (data.toString().trim()) {
             case 'p':
                 console.log('### Pause')
-                machineJob.pause()
+                machine.pauseJob()
                 break
 
             case 's':
             case 'r':
                 console.log('### Start/Resume')
-                machineJob.startOrResume()
+                machine.startOrResumeJob()
                 break
 
             case 'h':

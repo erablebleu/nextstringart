@@ -43,6 +43,14 @@ export namespace VectorHelper {
             y: s * v.x + c * v.y,
         }
     }
+
+    export function fromPoints(p0: Point, p1: Point): Vector {
+        return {
+            x: p1.x - p0.x,
+            y: p1.y - p0.y,
+            z: (p0.z === undefined || p1.z === undefined) ? undefined : p1.z - p0.z,
+        }
+    }
 }
 
 export namespace PointHelper {
@@ -53,19 +61,11 @@ export namespace PointHelper {
             z: (p.z === undefined || v.z === undefined) ? undefined : p.z + v.z,
         }
     }
-
-    export function substract(p0: Point, p1: Point): Vector {
-        return {            
-            x: p1.x - p0.x,
-            y: p1.y - p0.y,
-            z: (p0.z === undefined || p1.z === undefined) ? undefined : p1.z - p0.z,
-        }
-    }
 }
 
 export namespace LineHelper {
     export function getTangeant(p0: Point, d0: number, r0: RotationDirection, p1: Point, d1: number, r1: RotationDirection): Line {
-        var v: Vector = PointHelper.substract(p1, p0)
+        let v: Vector = VectorHelper.fromPoints(p0, p1)
         const l: number = VectorHelper.len(v)
         v = VectorHelper.normalize(v)
 
@@ -116,19 +116,19 @@ export class Cartesian {
             : Math.sqrt(Math.pow(d, 2) + Math.pow(p0.z - p1.z, 2))
     }
 
-    public static getEquidistantPoints(p0:Point, p1: Point, distance: number): Array<Point> {
+    public static getEquidistantPoints(p0: Point, p1: Point, distance: number): Array<Point> {
         const d = Math.sqrt(Math.pow(p0.x - p1.x, 2) + Math.pow(p0.y - p1.y, 2))
         const dsq = Math.pow(d, 2)
         const rsq = Math.pow(distance, 2)
 
         const c = Math.sqrt(4 * rsq / dsq - 1)
 
-        const fx = (p0.x + p1.x) / 2 
+        const fx = (p0.x + p1.x) / 2
         const gx = c * (p1.y - p0.y) / 2
 
         const fy = (p0.y + p1.y) / 2
         const gy = c * (p0.x - p1.x) / 2
-        
+
         return [
             { x: fx + gx, y: fy + gy },
             { x: fx - gx, y: fy - gy },

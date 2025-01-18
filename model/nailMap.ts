@@ -16,7 +16,7 @@ export type NailMap = {
 export namespace NailMapHelper {
     export function getLine(p0: Point, p1: Point, count: number, excludeVertex?: boolean): Point[] {
         const result: Point[] = []
-        const v: Vector = VectorHelper.scale(PointHelper.substract(p1, p0), 1 / count)
+        const v: Vector = VectorHelper.scale(VectorHelper.fromPoints(p0, p1), 1 / count)
         let p: Point = p0
 
         if (excludeVertex)

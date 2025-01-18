@@ -159,7 +159,7 @@ export default function ({ projectId }: Options) {
                     </ButtonGroup>
 
                     <Stack direction='row' spacing={1}>
-                        <Typography sx={{ marginTop: 1 }}>{state.nailMap.nails.length} nails | selected: x:{state.nailMap.nails[index].position.x},y:{state.nailMap.nails[index].position.y} | {state.nailMap.lines[index].length} paths</Typography>
+                        <Typography sx={{ marginTop: 1 }}>x:{state.nailMap.nails[index].position.x.toFixed(2)} y:{state.nailMap.nails[index].position.y.toFixed(2)} | {state.nailMap.lines[index].length} paths</Typography>
                     </Stack>
                 </Grid>
                 <Grid item xs={2}>
