@@ -1,6 +1,6 @@
 'use client'
 
-import { IPixelLine, IWeightPoint2D, PixelLine, PixelLineMode } from "@/tools/calculation/PixelLine";
+import { IPixelLine, IWeightPoint2D, PixelLine, PixelLineMode } from "@/tools/calculation/pixelLine";
 import { IPoint2D } from "@/tools/geometry/Point2D";
 import { Refresh } from "@mui/icons-material";
 import { Button, Stack } from "@mui/material";

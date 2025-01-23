@@ -1,36 +1,53 @@
+import { ColorOptions, LuminosityOptions } from "@/model";
+import { JimpHelper } from "@/tools/imaging/jimpHelper";
+import { Jimp } from "jimp";
 import React from "react";
 
 interface Options {
     imageData: string
-    filter?: string
-    filterFunc?: (data: Uint8ClampedArray) => void
-    onChange?: (data: Uint8ClampedArray) => void
+    colorOptions?: ColorOptions
+    luminosityOptions?: LuminosityOptions
 }
 
-export default function ({ imageData, filter, filterFunc, onChange }: Options) {
+export default function ({ imageData, colorOptions, luminosityOptions }: Options) {
     const canvas = React.useRef<HTMLCanvasElement>(null)
+    const [state, setState] = React.useState(imageData)
+
+    async function updateImageImage() {
+        const image = await Jimp.read(imageData)
+
+        JimpHelper.applyOptions(image, colorOptions, luminosityOptions)
+
+        setState(await image.getBase64('image/png'))
+    }
 
     React.useEffect(() => {
         if (typeof window === 'undefined') return
+        updateImageImage()
+    }, [imageData, colorOptions, luminosityOptions])
+
+
+    React.useEffect(() => {
+        if (typeof window === 'undefined') 
+            return
+
         const image = new Image()
-        image.src = imageData
+        image.src = state
         image.onload = () => {
-            if (!canvas.current) return
+            if (!canvas.current)
+                return
+
             canvas.current.width = image.width
             canvas.current.height = image.height
             const context = canvas.current.getContext('2d')
-            if (!context) return
+
+            if (!context)
+                return
+
             context.clearRect(0, 0, context.canvas.width, context.canvas.height)
-            context.filter = filter ?? ''
             context.drawImage(image, 0, 0)
-            if (filterFunc) {
-                const imageData = context.getImageData(0, 0, image.width, image.height)
-                filterFunc(imageData.data)
-                context.putImageData(imageData, 0, 0)
-            }
-            onChange?.(context.getImageData(0, 0, image.width, image.height).data)     
         }
-    }, [imageData, filter, filterFunc])
+    }, [state])
 
     return (
         <React.Fragment>

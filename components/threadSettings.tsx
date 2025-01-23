@@ -14,10 +14,9 @@ interface Options {
     data: Thread
     onChange?: (value: Thread) => void
     onDelete?: (value: Thread) => void
-    onImageChange?: (data: Uint8ClampedArray) => void
 }
 
-export default function ({ data, onChange, onDelete, onImageChange }: Options) {
+export default function ({ data, onChange, onDelete }: Options) {
     const [state, setState] = React.useState(data)
 
     React.useEffect(() => {
@@ -96,9 +95,8 @@ export default function ({ data, onChange, onDelete, onImageChange }: Options) {
                 <Grid item xs={3}>
                     <ImagePreview
                         imageData={state.imageInfo.imageData}
-                        filter={state.luminosityOptions.isEnabled ? `brightness(${state.luminosityOptions.brightness}) contrast(${state.luminosityOptions.contrast})` : undefined}
-                        filterFunc={state.colorOptions.isEnabled ? (d) => ImageFilter.RGB(d, state.colorOptions.colorMatrix) : undefined}
-                        onChange={(data: Uint8ClampedArray) => onImageChange?.(data)}
+                        colorOptions={state.colorOptions}
+                        luminosityOptions={state.luminosityOptions}
                     />
                 </Grid>
             </Grid>

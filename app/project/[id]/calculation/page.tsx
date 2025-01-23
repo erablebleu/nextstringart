@@ -1,10 +1,15 @@
-'use client'
+'use server'
 
+import { IdParameters } from "@/app/parameters"
 import React from "react"
+import CalculatorView from "@/components/calculatorView"
 
-export default function() {
+export default async function ({ params }: { params: Promise<IdParameters> }) {
+    const id = (await params).id
 
-    return (<React.Fragment>
-        
-    </React.Fragment>)
+    return (
+        <CalculatorView
+            projectId={id} >
+        </CalculatorView>
+    )
 }

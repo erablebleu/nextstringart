@@ -2,10 +2,10 @@ import { SerialPort } from 'serialport'
 import { MachineInfo, MachineJobInfo, MachineJobStatus, MachineStatus } from './machineInfo'
 import { MachineSettings } from './settings'
 import { MachineMoveInstruction } from './machineMoveInstruction'
-import { EventEmitter } from 'stream'
 import { PromiseWithResolvers } from '../promiseWithResolver'
 import { GCodeGenerator } from './gcode/generator'
 import { MachineReferential } from './referential'
+import EventEmitter from 'node:events'
 
 export class SerialMachine {
     private _settings?: MachineSettings

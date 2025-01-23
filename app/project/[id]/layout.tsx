@@ -14,7 +14,10 @@ export default function ({ children, params }: { children: React.ReactNode, para
     const id = params.id
     const router = useRouter()
     const pathname = usePathname()
-    const tab = pathname.split('/').at(-1)
+    let tab = pathname.split('/').at(-1)
+
+    if (!tab || !['raw', 'settings', 'map', 'calculation'].includes(tab))
+        tab = 'raw'
 
     async function handleTabChange(event: React.SyntheticEvent, tab: string) {
         router.push(`/project/${params.id}/${tab}`)
@@ -42,7 +45,6 @@ export default function ({ children, params }: { children: React.ReactNode, para
                     <Tab value="settings" label="Settings" />
                     <Tab value="map" label="Map" />
                     <Tab value="calculation" label="Claculation" />
-                    <Tab value="stepper" label="Stepper" />
                 </Tabs>
             </Box>
             <Box>

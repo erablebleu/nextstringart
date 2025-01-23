@@ -37,6 +37,7 @@ const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
 
 type Options = {
     projectId: string
+    instructionsId: string
 }
 
 type SVGInfo = {
@@ -49,8 +50,8 @@ type SVGInfo = {
 
 const SVG_MARGIN = 60
 
-export default function ({ projectId }: Options) {
-    const [settings, setSettings] = useLocalStorage(`stepper_settings_${projectId}`, {
+export default function ({ projectId, instructionsId }: Options) {
+    const [settings, setSettings] = useLocalStorage(`stepper_settings_${projectId}_${instructionsId}`, {
         step: 0,
         offset: 0,
         thickness: 0.20,
@@ -65,8 +66,7 @@ export default function ({ projectId }: Options) {
 
     React.useEffect(() => {
         Action.try(async () => {
-            const instructionId: string = '0b0bed28-e497-4590-a02d-5d5385257696'
-            const response = await fetchAndThrow(`/api/project/${projectId}/instructions/${instructionId}`, { method: 'GET' })
+            const response = await fetchAndThrow(`/api/project/${projectId}/instructions/${instructionsId}`, { method: 'GET' })
             const instructions: Instructions = await response.json()
 
             const minX = Math.min(...instructions.nails.map(n => n.position.x - n.diameter / 2)) - SVG_MARGIN
@@ -87,7 +87,7 @@ export default function ({ projectId }: Options) {
                 }
             })
         })
-    }, [])
+    }, [projectId, instructionsId])
 
     async function goToStep(number: number) {
         setSettings({
@@ -95,7 +95,7 @@ export default function ({ projectId }: Options) {
             step: number
         })
         const instruction: Step = state!.steps[number + 1]
-        
+
         if (settings.speech)
             Speech.say(`${(settings.offset + instruction.nailIndex) % state!.nails.length}. ${RotationDirection[instruction.direction]}`)
     }
@@ -148,16 +148,18 @@ export default function ({ projectId }: Options) {
     if (!state)
         return <React.Fragment>Loading ...</React.Fragment>
 
-    if (settings.step >= state.steps.length - 1) {
-        settings.step = 0
+    let step = settings.step
+
+    if (step >= state.steps.length - 1) {
+        step = 0
     }
 
-    const srcNailIdx: number = settings.step == 0
+    const srcNailIdx: number = step == 0
         ? 0
-        : state.steps[settings.step].nailIndex
+        : state.steps[step].nailIndex
 
     const dstNailIdx: number = state.steps.length > 1
-        ? state.steps[settings.step + 1].nailIndex
+        ? state.steps[step + 1].nailIndex
         : 0
 
     const srcNail = getNail(srcNailIdx)
@@ -172,22 +174,71 @@ export default function ({ projectId }: Options) {
             flexDirection='column'
             direction='column'
         >
-            <Stack direction='row' spacing={4}>
-                <Stack direction='row'>
-                    <ButtonGroup>
+            <Grid
+                item
+                container
+                direction='row'
+                spacing={1}
+            >
+                <Grid item xs={3}>
+                    <Stack
+                        direction='row'
+                        spacing={1}
+                    >
+                        <TextField
+                            size="small"
+                            value={settings.offset}
+                            onChange={handleChange}
+                            label="offset"
+                            name="offset"
+                            id="formatted-numberformat-offset"
+                            InputProps={{ inputComponent: NumericFormatCustom as any }}
+                            variant="standard" />
+                        <TextField
+                            size="small"
+                            value={settings.thickness}
+                            onChange={handleChange}
+                            label="thickness"
+                            name="thickness"
+                            id="formatted-numberformat-thickness"
+                            InputProps={{ inputComponent: NumericFormatCustom as any }}
+                            variant="standard"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    size="small"
+                                    checked={settings.speech}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings({ ...settings, speech: e.target.checked })}
+                                />
+                            }
+                            label="speech"
+                        />
+                    </Stack>
+                </Grid>
+
+                <Grid
+                    item
+                    container
+                    xs={6}
+                    direction='column'
+                    alignItems="center"
+                    justifyContent='center' >
+                    <ButtonGroup
+                        size="small">
                         <Button
                             onClick={() => goToStep(0)}>
                             <FirstPage />
                         </Button>
                         <Button
-                            onClick={() => goToStep(settings.step == 0 ? state.nails.length - 1 : settings.step - 1)}>
+                            onClick={() => goToStep(step == 0 ? state.nails.length - 1 : step - 1)}>
                             <ChevronLeft />
                         </Button>
                         <Button disabled sx={{ width: '100px' }}>
-                            {settings.step + 1} / {state.nails.length}
+                            {step + 1} / {state.nails.length}
                         </Button>
                         <Button
-                            onClick={() => goToStep(settings.step == state.nails.length - 1 ? 0 : settings.step + 1)}>
+                            onClick={() => goToStep(step == state.nails.length - 1 ? 0 : step + 1)}>
                             <ChevronRight />
                         </Button>
                         <Button>
@@ -195,41 +246,13 @@ export default function ({ projectId }: Options) {
                                 onClick={() => goToStep(state.nails.length - 1)} />
                         </Button>
                     </ButtonGroup>
-                </Stack>
-                <Stack direction='row' spacing={1}>
-                    <TextField
-                        value={settings.offset}
-                        onChange={handleChange}
-                        label="offset"
-                        name="offset"
-                        id="formatted-numberformat-offset"
-                        InputProps={{ inputComponent: NumericFormatCustom as any }}
-                        variant="standard" />
-                    <TextField
-                        value={settings.thickness}
-                        onChange={handleChange}
-                        label="thickness"
-                        name="thickness"
-                        id="formatted-numberformat-thickness"
-                        InputProps={{ inputComponent: NumericFormatCustom as any }}
-                        variant="standard"
-                    />
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={settings.speech}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings({ ...settings, speech: e.target.checked })}
-                            />
-                        }
-                        label="speech"
-                    />
-                </Stack>
-            </Stack>
+                </Grid>
 
-            <Box>
-                {srcNail && <Typography>src: {srcNailIdx} | x:{srcNail.position.x.toFixed(2)} y:{srcNail.position.y.toFixed(2)}</Typography>}
-                {dstNail && <Typography>dst: {dstNailIdx} | x:{dstNail.position.x.toFixed(2)} y:{dstNail.position.y.toFixed(2)}</Typography>}
-            </Box>
+                <Grid item xs={3}>
+                    {srcNail && <Typography fontSize={12} color='grey'>src: {srcNailIdx} | x:{srcNail.position.x.toFixed(2)} y:{srcNail.position.y.toFixed(2)}</Typography>}
+                    {dstNail && <Typography fontSize={12} color='grey'>dst: {dstNailIdx} | x:{dstNail.position.x.toFixed(2)} y:{dstNail.position.y.toFixed(2)}</Typography>}
+                </Grid>
+            </Grid>
 
             <Grid
                 item
@@ -240,8 +263,8 @@ export default function ({ projectId }: Options) {
 
                 <svg
                     viewBox={`${state.svgInfo.minX} ${state.svgInfo.minY} ${state.svgInfo.maxX - state.svgInfo.minX} ${state.svgInfo.maxY - state.svgInfo.minY}`}
-                    preserveAspectRatio="xMidYMid meet"
-                    height="100%"
+                    preserveAspectRatio="xMidYMid"
+                    height='100%'
                 >
                     <linearGradient
                         id="gradient_0000" >
@@ -249,7 +272,7 @@ export default function ({ projectId }: Options) {
                         <stop offset="1" stopColor="#ff0000" />
                     </linearGradient>
                     {
-                        Array.from(Array(settings.step).keys()).map((i: number) => (
+                        Array.from(Array(step).keys()).map((i: number) => (
                             <line
                                 key={`line_${i}`}
                                 {...getPosition(i)}
@@ -264,18 +287,18 @@ export default function ({ projectId }: Options) {
                                 id="currentLineGradient"
                                 xlinkHref="#gradient_0000"
                                 gradientUnits="userSpaceOnUse"
-                                {...getPosition(settings.step)} />
+                                {...getPosition(step)} />
                             {dstNail && <path
                                 fill="red"
-                                transform={`translate(${dstNail.position.x}, ${dstNail.position.y}) rotate(${getArrowAngle(settings.step)})`}
+                                transform={`translate(${dstNail.position.x}, ${dstNail.position.y}) rotate(${getArrowAngle(step)})`}
                                 d={
-                                    state.steps[settings.step + 1].direction == RotationDirection.ClockWise
+                                    state.steps[step + 1].direction == RotationDirection.ClockWise
                                         ? "M 0 -16.697266 C -9.203444 -16.697266 -16.697266 -9.203444 -16.697266 0 A 1.7007855 1.7007855 0 0 0 -15 1.6972656 A 1.7007855 1.7007855 0 0 0 -13.302734 0 C -13.302734 -7.3650985 -7.3650985 -13.302734 0 -13.302734 C 5.0059037 -13.302734 9.3464603 -10.555968 11.617188 -6.4863281 C 11.444061 -6.5903516 11.266602 -6.6851953 11.101562 -6.8066406 C 11.051801 -6.842206 10.992725 -6.8622365 10.931641 -6.8652344 C 10.702673 -6.8781604 10.536333 -6.6528318 10.615234 -6.4375 L 14.71875 4.7089844 C 14.821712 4.9861409 15.215399 4.9861409 15.318359 4.7089844 L 19.414062 -6.4375 C 19.5252 -6.7342496 19.183315 -6.9939635 18.927734 -6.8066406 C 17.954342 -6.1080174 16.842903 -5.7144588 15.712891 -5.5917969 C 13.404801 -12.051512 7.2403535 -16.697266 0 -16.697266 z"
                                         : "m 0,-16.697266 c -7.2412369,0 -13.407417,4.646475 -15.714844,11.1074222 -1.128002,-0.1209083 -2.229501,-0.5147211 -3.183594,-1.2167968 -0.04976,-0.035565 -0.108832,-0.055596 -0.169921,-0.058594 -0.228968,-0.012926 -0.395308,0.2124026 -0.316407,0.4277344 l 4.103516,11.1464844 c 0.102962,0.2771565 0.496649,0.2771565 0.599609,0 L -10.585938,-6.4375 c 0.111138,-0.2967496 -0.230747,-0.5564635 -0.486328,-0.3691406 -0.17778,0.1275963 -0.368518,0.2275186 -0.554687,0.3359375 C -9.3587198,-10.549229 -5.0125174,-13.302734 0,-13.302734 7.3650977,-13.302734 13.302734,-7.3650977 13.302734,0 13.30436,0.9370142 14.062986,1.6956404 15,1.6972656 15.937014,1.6956404 16.69564,0.9370142 16.697266,0 16.697266,-9.2034448 9.2034448,-16.697266 0,-16.697266 Z"
                                 }
                             />}
                             <line
-                                {...getPosition(settings.step)}
+                                {...getPosition(step)}
                                 style={{
                                     stroke: "url(#currentLineGradient)",
                                     strokeWidth: 1,

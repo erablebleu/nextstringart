@@ -20,21 +20,25 @@ export class FileRepository<T> {
         return join(this.directory, id, this.fileName)
     }
 
-    public async create(data: T): Promise<string> {
-        const id: string = crypto.randomUUID()
+    public async create(data: T, id?: string): Promise<string> {
+        const date = new Date()
+        id ??= crypto.randomUUID()
+
         await fs.promises.mkdir(join(this.directory, id), { recursive: true })
 
         await this.update({
             ...data,
+            createdAt: date,
+            updatedAt: date,
             id,
-        })
+        }, date)
 
         return id!
     }
 
     public async read(id: string): Promise<T & Entity> {
         const filePath = this.getFilePath(id)
-        const data = await File.readJSON<T>(filePath)
+        const data = await File.readJSON<T & Entity>(filePath)
 
         return { ...data, id }
     }
@@ -43,12 +47,14 @@ export class FileRepository<T> {
         return await Promise.all((await fs.promises.readdir(this.directory, { withFileTypes: true }))
             .filter(x => x.isDirectory() && fs.existsSync(join(this.directory, x.name, this.fileName)))
             .map(async x => {
-                const data = await File.readJSON<T>(join(this.directory, x.name, this.fileName))
+                const data = await File.readJSON<T & Entity>(join(this.directory, x.name, this.fileName))
                 return { ...data, id: x.name }
             }))
     }
 
-    public async update(data: T & Entity): Promise<void> {
+    public async update(data: T & Entity, date?: Date): Promise<void> {
+        data.updatedAt = date ?? new Date()
+
         if (!data.id)
             data.id = crypto.randomUUID()
 

@@ -1,12 +1,12 @@
 'use client'
 
-import { Box, Button, ButtonGroup, Grid, Stack, Typography } from "@mui/material";
+import { Button, ButtonGroup, Grid, MenuItem, Select, Stack, Typography } from "@mui/material";
 import React from "react";
 import { Action } from "@/app/action";
 import { fetchAndThrow } from "@/tools/fetch";
 import { ChevronLeft, ChevronRight, FirstPage, LastPage, Save } from "@mui/icons-material";
 import { enqueueSnackbar } from "notistack";
-import { Project, Frame, NailMap, NailMapHelper, Nail } from "@/model";
+import { Project, Frame, NailMap, NailMapHelper, Nail, Entity } from "@/model";
 
 type Options = {
     projectId: string
@@ -27,7 +27,7 @@ export default function ({ projectId }: Options) {
 
     const [state, setState] = React.useState<{
         project: Project
-        frame: Frame
+        frames: Array<Frame & Entity>
         nailMap: NailMap
         svgInfo: SVGInfo
     } | undefined>()
@@ -36,23 +36,30 @@ export default function ({ projectId }: Options) {
         Action.try(async () => {
             const resProject = await fetchAndThrow(`/api/project/${projectId}`, { method: 'GET' })
             const project: Project = await resProject.json()
-            const resFrame = await fetchAndThrow(`/api/frame/${project.frameId}`, { method: 'GET' })
-            const frame: Frame = await resFrame.json()
+            const resFrames = await fetchAndThrow(`/api/frame`, { method: 'GET' })
+            const frames: Array<Frame & Entity> = await resFrames.json()
+            const frame: Frame & Entity = frames.find((x: Frame & Entity) => x.id == project.frameId) ?? frames[0]
             const nailMap: NailMap = NailMapHelper.get(frame)
+
+            project.frameId = frame.id
 
             setState({
                 project,
-                frame,
+                frames,
                 nailMap,
-                svgInfo: {
-                    minX: Math.min(...nailMap.nails.map(n => n.position.x - n.diameter / 2)) - SVG_MARGIN,
-                    maxX: Math.max(...nailMap.nails.map(n => n.position.x + n.diameter / 2)) + SVG_MARGIN,
-                    minY: Math.min(...nailMap.nails.map(n => n.position.y - n.diameter / 2)) - SVG_MARGIN,
-                    maxY: Math.max(...nailMap.nails.map(n => n.position.y + n.diameter / 2)) + SVG_MARGIN,
-                }
+                svgInfo: getSvgInfo(nailMap)
             })
         })
     }, [])
+
+    function getSvgInfo(nailMap: NailMap): SVGInfo {
+        return {
+            minX: Math.min(...nailMap.nails.map(n => n.position.x - n.diameter / 2)) - SVG_MARGIN,
+            maxX: Math.max(...nailMap.nails.map(n => n.position.x + n.diameter / 2)) + SVG_MARGIN,
+            minY: Math.min(...nailMap.nails.map(n => n.position.y - n.diameter / 2)) - SVG_MARGIN,
+            maxY: Math.max(...nailMap.nails.map(n => n.position.y + n.diameter / 2)) + SVG_MARGIN,
+        }
+    }
 
     async function onWheel(event: any) {
         if (!event.shiftKey) return
@@ -85,6 +92,25 @@ export default function ({ projectId }: Options) {
         })
     }
 
+    async function handleFrameChange(frameId: string) {
+        if (!state)
+            return
+
+        const frame: Frame & Entity = state.frames.find((x: Frame & Entity) => x.id == frameId) ?? state.frames[0]
+        const nailMap: NailMap = NailMapHelper.get(frame)
+
+        setState({
+            ...state!,
+            project: {
+                ...state!.project,
+                frameId,
+            },
+            nailMap,
+            svgInfo: getSvgInfo(nailMap),
+        })
+        setIndex(0)
+        setIsDragging(false)
+    }
 
     async function handleSave() {
         try {
@@ -119,15 +145,28 @@ export default function ({ projectId }: Options) {
                 direction='row'
                 spacing={1}
             >
-                <Grid item xs={2}>
-                    <ButtonGroup>
+                <Grid
+                    item
+                    xs={2}>
+                    <ButtonGroup
+                        size="small">
                         <Button
                             color="success"
                             onClick={handleSave}
                             endIcon={<Save />}>
                             Save
                         </Button>
+                        <Select
+                            size="small"
+                            value={state.project.frameId}
+                            onChange={(e) => handleFrameChange(e.target.value as string)}
+                        >
+                            {state.frames.map((x: Frame & Entity) => (
+                                <MenuItem key={x.id} value={x.id}>{x.name}</MenuItem>
+                            ))}
+                        </Select>
                     </ButtonGroup>
+
                 </Grid>
                 <Grid
                     item
@@ -159,12 +198,12 @@ export default function ({ projectId }: Options) {
                     </ButtonGroup>
 
                     <Stack direction='row' spacing={1}>
-                        <Typography sx={{ marginTop: 1 }}>x:{state.nailMap.nails[index].position.x.toFixed(2)} y:{state.nailMap.nails[index].position.y.toFixed(2)} | {state.nailMap.lines[index].length} paths</Typography>
+                        <Typography fontSize={12} color='grey' sx={{ marginTop: 1 }}>x:{state.nailMap.nails[index].position.x.toFixed(2)} y:{state.nailMap.nails[index].position.y.toFixed(2)} | {state.nailMap.lines[index].length} paths</Typography>
                     </Stack>
                 </Grid>
                 <Grid item xs={2}>
-                    <Typography color='grey'>Shift + Drag to move</Typography>
-                    <Typography color='grey'>Shift + Wheel to zoom</Typography>
+                    <Typography fontSize={12} color='grey'>Shift + Drag to move</Typography>
+                    <Typography fontSize={12} color='grey'>Shift + Wheel to zoom</Typography>
                 </Grid>
             </Grid>
             <Grid

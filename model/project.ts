@@ -1,11 +1,17 @@
 import { NailMapTransformation } from "./nailMap"
 
+export enum CalculationMethod {
+    delta = 'delta',
+    mri = 'mri'
+}
+
 export type Project = {
     name?: string
     description?: string
     frameId: string
     nailMapTransformation: NailMapTransformation
     threads: Thread[]
+    calculationMethod: CalculationMethod
 }
 
 export interface IImageInfo {

@@ -9,63 +9,44 @@ export type PixelLineEvaluation = {
     apply: () => void
 }
 
-export interface IPixelLine {
-    points: WeightPoint[]
-    evaluate: (data: number[][], target: number[][], factor: number) => PixelLineEvaluation
-}
-
 export enum PixelLineMode {
     Simple,
     Bresenham,
     XiaolinWu,
 }
 
-export class PixelLine implements IPixelLine {
-    public points: WeightPoint[] = []
+export namespace PixelLineHelper {
 
-    constructor(data: WeightPoint[]) {
-        this.points = data
-    }
-
-    public evaluate(data: number[][], target: number[][], factor: number): PixelLineEvaluation {
-        const getIndicator = (d: number, t: number, v: number) => t - d //Math.pow(t - d, 2) - Math.pow(t - v, 2)
-        const result: number[] = this.points.map((p: WeightPoint) => Math.min(Math.max(data[p.x][p.y] + factor * p.weight, 0), 1))
-        return {
-            value: this.points.reduce((a: number, p: WeightPoint, index: number) => a + getIndicator(data[p.x][p.y], target[p.x][p.y], result[index]), 0),
-            apply: () => this.points.forEach((p: WeightPoint, index: number) => data[p.x][p.y] = result[index])
-        }
-    }
-
-    public static get(p0: Point, p1: Point, mode: PixelLineMode = PixelLineMode.Simple): IPixelLine {
+    export function get(p0: Point, p1: Point, mode: PixelLineMode = PixelLineMode.Simple): WeightPoint[] {
         switch (mode) {
-            case PixelLineMode.Simple: return PixelLine.getSimple(p0, p1)
-            case PixelLineMode.Bresenham: return PixelLine.getBresenham(p0, p1)
-            case PixelLineMode.XiaolinWu: return PixelLine.getXiaolinWu(p0, p1)
+            case PixelLineMode.Simple: return PixelLineHelper.getSimple(p0, p1)
+            case PixelLineMode.Bresenham: return PixelLineHelper.getBresenham(p0, p1)
+            case PixelLineMode.XiaolinWu: return PixelLineHelper.getXiaolinWu(p0, p1)
         }
     }
 
-    public static getSimple(p0: Point, p1: Point): IPixelLine {        
+    export function getSimple(p0: Point, p1: Point): WeightPoint[] {
         var x0: number = p0.x
         var y0: number = p0.y
         var x1: number = p1.x
         var y1: number = p1.y
         const result: Array<WeightPoint> = []
         const steep: boolean = Math.abs(y1 - y0) > Math.abs(x1 - x0)
-        
+
         if (steep)
             [x0, y0, x1, y1] = [y0, x0, y1, x1]
         if (x0 > x1)
             [x0, y0, x1, y1] = [x1, y1, x0, y0]
-            
+
         for (let x = Math.floor(x0); x <= x1; x++) {
             const y: number = Math.floor(y0 + (y1 - y0) * (x - x0) / (x1 - x0))
             result.push(steep ? { x: y, y: x, weight: 1 } : { x, y, weight: 1 })
         }
 
-        return new PixelLine(result)
+        return result
     }
 
-    public static getBresenham(p0: Point, p1: Point): IPixelLine {
+    export function getBresenham(p0: Point, p1: Point): WeightPoint[] {
         const fPart: ((value: number) => number) = (value: number) => value - Math.floor(value) + (value > 0 ? 0 : -1)
 
         var x0: number = p0.x
@@ -99,11 +80,11 @@ export class PixelLine implements IPixelLine {
                     ? { x: Math.floor(y) - 1, y: x, weight: 1 - fy }
                     : { x: x, y: Math.floor(y) - 1, weight: 1 - fy })
         }
-        
-        return new PixelLine(result)
+
+        return result
     }
 
-    public static getXiaolinWu(p0: Point, p1: Point): IPixelLine {
+    export function getXiaolinWu(p0: Point, p1: Point): WeightPoint[] {
         const fPart: ((value: number) => number) = (value: number) => value - Math.floor(value)
         const rfPart: ((value: number) => number) = (value: number) => 1 - fPart(value);
 
@@ -169,6 +150,15 @@ export class PixelLine implements IPixelLine {
                 intery += gradient;
             }
 
-        return new PixelLine(result)
+        return result
+    }
+
+    export function evaluate(line: Array<WeightPoint>, data: number[][], target: number[][], factor: number): PixelLineEvaluation {
+        const getIndicator = (d: number, t: number, v: number) => t - d //Math.pow(t - d, 2) - Math.pow(t - v, 2)
+        const result: number[] = line.map((p: WeightPoint) => Math.min(Math.max(data[p.x][p.y] + factor * p.weight, 0), 1))
+        return {
+            value: line.reduce((a: number, p: WeightPoint, index: number) => a + getIndicator(data[p.x][p.y], target[p.x][p.y], result[index]), 0),
+            apply: () => line.forEach((p: WeightPoint, index: number) => data[p.x][p.y] = result[index])
+        }
     }
 }

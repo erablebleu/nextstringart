@@ -13,14 +13,4 @@ export class ImageFilter {
             }
         }
     }
-
-    public static async BC(data: Uint8ClampedArray, brightness: number, contrast: number) {
-        const result: Uint8Array = new Uint8Array()
-        for (let i = 0; i < data.length / 3; i++) {
-
-        }
-
-        return result
-    }
-
 }

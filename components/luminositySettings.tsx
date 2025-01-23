@@ -68,7 +68,7 @@ export default function ({ luminosityOptions, onChange }: Options) {
                                     propertyName="contrast" />
                             </Grid>
                             <Grid item xs={8} >
-                                <Slider min={0} max={3} value={state.contrast}
+                                <Slider min={-1} max={1} value={state.contrast}
                                     disabled={!state.isEnabled}
                                     step={0.01}
                                     onChange={(event: Event, newValue: number | number[]) => {

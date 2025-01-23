@@ -3,18 +3,17 @@
 import { IdParameters } from "@/app/parameters"
 import ThreadSettings from "@/components/threadSettings"
 import { useData } from "@/hooks"
-import { Project, Thread } from "@/model"
+import { CalculationMethod, Project, Thread } from "@/model"
 import { fetchAndThrow } from "@/tools/fetch"
 import { ExpandMore, Save } from "@mui/icons-material"
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, ButtonGroup, Grid, Typography } from "@mui/material"
+import { Accordion, AccordionDetails, AccordionSummary, Button, ButtonGroup, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from "@mui/material"
 import { enqueueSnackbar } from "notistack"
 import React from "react"
 
 export default function ({ params }: { params: IdParameters }) {
-    const id = params.id
-    const apiUrl = `/api/project/${id}`
-    const [project, setProject] = useData<Project>(`/api/project/${id}`)
-    const threadData = React.useRef<Array<Uint8ClampedArray | null>>([])
+    const projectId = params.id
+    const apiUrl = `/api/project/${projectId}`
+    const [project, setProject] = useData<Project>(`/api/project/${projectId}`)
 
     async function handleSave() {
         try {
@@ -31,19 +30,43 @@ export default function ({ params }: { params: IdParameters }) {
         }
     }
 
+    async function handleCalculationMethodChanged(calculationMethod: CalculationMethod) {
+        setProject({
+            ...project!,
+            calculationMethod,
+        })
+    }
+
+    async function handleCalculate() {
+        try {
+            await fetchAndThrow(`/api/project/${projectId}/calculation`, { method: 'POST' })
+            enqueueSnackbar('Calculation successfully started', { variant: 'success' })
+        }
+        catch (e) {
+            console.error(e)
+            enqueueSnackbar('Error starting calculation', { variant: 'error' })
+        }
+    }
+
     if (!project)
         return <React.Fragment>Loading ...</React.Fragment>
 
     return (
-        <Box
+        <Stack
             height='100%'
             flexGrow={1}
             display='flex'
-            flexDirection='column'>
-            <Box
-                sx={{ marginBottom: 1 }}
+            flexDirection='column'
+            direction='column'
+            spacing={1}>
+            <Stack
+                direction='row'
+                spacing={1}
             >
-                <ButtonGroup variant="outlined" sx={{ marginBottom: 2 }}>
+                <ButtonGroup
+                    size="small"
+                    variant="outlined"
+                    sx={{ marginBottom: 2 }}>
                     <Button
                         color="success"
                         onClick={handleSave}
@@ -53,13 +76,47 @@ export default function ({ params }: { params: IdParameters }) {
                     <Button onClick={(e) => setProject({
                         ...project,
                         threads: project.threads.concat([new Thread])
-                    })}>Add Thread</Button>
+                    })}>
+                        Add Thread
+                    </Button>
+                    <Button onClick={handleCalculate}>
+                        Calculate
+                    </Button>
                 </ButtonGroup>
-            </Box>
-            <Box
+            </Stack>
+
+            <Stack
+                spacing={1}
                 height='100%'
                 flexGrow={1}
                 sx={{ overflowY: 'auto' }}>
+
+                <Accordion
+                    disableGutters={true}
+                    defaultExpanded={true}>
+                    <AccordionSummary
+                        expandIcon={<ExpandMore />} >
+                        <Typography variant="h5">Global</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <FormControl fullWidth>
+                            <InputLabel
+                                id="calculation-method-label">
+                                Calculation method
+                            </InputLabel>
+                            <Select
+                                labelId="calculation-method-label"
+                                label="Calculation method"
+                                size="small"
+                                value={project.calculationMethod}
+                                onChange={(e) => handleCalculationMethodChanged(e.target.value as CalculationMethod)}>
+                                {[CalculationMethod.delta, CalculationMethod.mri].map((item: CalculationMethod) =>
+                                    <MenuItem key={item} value={item}>{item}
+                                    </MenuItem>)}
+                            </Select>
+                        </FormControl>
+                    </AccordionDetails>
+                </Accordion>
 
                 {project.threads.map((thread: Thread, index: number) => (
                     <Accordion
@@ -87,12 +144,11 @@ export default function ({ params }: { params: IdParameters }) {
                                 onDelete={() => setProject({
                                     ...project,
                                     threads: project.threads.filter(t => t != thread)
-                                })}
-                                onImageChange={(data: Uint8ClampedArray) => threadData.current = project.threads.map((t: Thread, i: number) => t == thread ? data : threadData.current.length > i ? threadData.current[i] : null)} />
+                                })} />
                         </AccordionDetails>
                     </Accordion>
                 ))}
-            </Box>
-        </Box>
+            </Stack>
+        </Stack>
     )
 }
