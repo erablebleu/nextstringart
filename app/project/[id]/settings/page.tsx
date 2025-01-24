@@ -3,7 +3,7 @@
 import { IdParameters } from "@/app/parameters"
 import ThreadSettings from "@/components/threadSettings"
 import { useData } from "@/hooks"
-import { CalculationMethod, Project, Thread } from "@/model"
+import { CalculationMethod, Project, ProjectHelper, Thread } from "@/model"
 import { fetchAndThrow } from "@/tools/fetch"
 import { ExpandMore, Save } from "@mui/icons-material"
 import { Accordion, AccordionDetails, AccordionSummary, Button, ButtonGroup, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from "@mui/material"
@@ -75,7 +75,7 @@ export default function ({ params }: { params: IdParameters }) {
                     </Button>
                     <Button onClick={(e) => setProject({
                         ...project,
-                        threads: project.threads.concat([new Thread])
+                        threads: [...project.threads, ProjectHelper.defaultThread()],
                     })}>
                         Add Thread
                     </Button>

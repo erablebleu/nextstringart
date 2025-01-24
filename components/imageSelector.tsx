@@ -1,10 +1,10 @@
 import React from "react";
 import ImagePreview from "./imagePreview";
-import { IImageInfo } from "@/model";
+import { ImageInfo } from "@/model";
 
 interface IOptions {
     imageData?: string
-    onChange?: (v: IImageInfo) => void
+    onChange?: (v: ImageInfo) => void
 }
 
 export default function ({ imageData, onChange }: IOptions) {

@@ -1,7 +1,6 @@
-import { ColorOptions, IImageInfo, LuminosityOptions, Thread } from "@/model";
+import { ColorOptions, ImageInfo, LuminosityOptions, Thread } from "@/model";
 import React from "react";
 import { Button, Card, CardContent, CardHeader, Grid, Stack, TextField } from "@mui/material";
-import { ImageFilter } from "@/tools/imaging/ImageFilter";
 import { Delete } from "@mui/icons-material";
 import ImageSelector from "./imageSelector";
 import ColorSettings from "./colorSettings";
@@ -41,7 +40,7 @@ export default function ({ data, onChange, onDelete }: Options) {
                 <Grid item xs={3}>
                     <ImageSelector
                         imageData={data.imageInfo.imageData}
-                        onChange={(newValue: IImageInfo) => setNewValue({
+                        onChange={(newValue: ImageInfo) => setNewValue({
                             ...state,
                             imageInfo: newValue
                         })} />

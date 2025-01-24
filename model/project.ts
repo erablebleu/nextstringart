@@ -14,38 +14,68 @@ export type Project = {
     calculationMethod: CalculationMethod
 }
 
-export interface IImageInfo {
+export type ImageInfo = {
     imageData: string
     width: number
     height: number
 }
 
-export class Thread {
-    public color: string = "#000000"
-    public previewThickness: number = 0.1
-    public maxStep: number = 4000
-    public calculationThickness: number = 0.1
-    public imageInfo: IImageInfo = {
-        imageData: '',
-        width: 0,
-        height: 0
+export type Thread = {
+    color: string
+    previewThickness: number
+    maxStep: number
+    calculationThickness: number
+    imageInfo: ImageInfo
+    colorOptions: ColorOptions
+    luminosityOptions: LuminosityOptions
+    description?: string
+}
+
+export type LuminosityOptions = {
+    isEnabled: boolean
+    brightness: number // [0; 2]
+    contrast: number // [0; 2]
+}
+
+export type ColorOptions = {
+    isEnabled: boolean
+    colorMatrix: Array<Array<number>>
+}
+
+export namespace ProjectHelper {
+    export function defaultThread(): Thread {
+        return {
+            color: "#000000",
+            previewThickness: 0.1,
+            maxStep: 4000,
+            calculationThickness: 0.1,
+            imageInfo: {
+                imageData: '',
+                width: 0,
+                height: 0,
+            },
+            colorOptions: defaultColorOptions(),
+            luminosityOptions: defaultLuminosityOptions(),
+            description: "Black thread",
+        }
     }
-    public colorOptions: ColorOptions = new ColorOptions()
-    public luminosityOptions: LuminosityOptions = new LuminosityOptions()
-    public description?: string = "Black thread"
-}
 
-export class LuminosityOptions {
-    public isEnabled: boolean = false
-    public brightness: number = 1 // [0; 2]
-    public contrast: number = 1 // [0; 2]
-}
+    export function defaultColorOptions(): ColorOptions {
+        return {
+            isEnabled: false,
+            colorMatrix: [
+                [0.30, 0.30, 0.30],
+                [0.59, 0.59, 0.59],
+                [0.11, 0.11, 0.11],
+            ],
+        }
+    }
 
-export class ColorOptions {
-    public isEnabled: boolean = false
-    public colorMatrix: number[][] = [
-        [0.30, 0.30, 0.30],
-        [0.59, 0.59, 0.59],
-        [0.11, 0.11, 0.11],
-    ]
+    export function defaultLuminosityOptions(): LuminosityOptions {
+        return {
+            isEnabled: false,
+            brightness: 1,// [0; 2]
+            contrast: 1, // [0; 2]
+        }
+    }
 }
