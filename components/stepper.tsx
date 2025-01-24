@@ -1,13 +1,18 @@
-import { FormControlLabel, Checkbox, Grid, Box, Button, ButtonGroup, Stack, TextField, Typography } from "@mui/material";
+'use client'
+
+import { FormControlLabel, Checkbox, Grid, Box, Button, ButtonGroup, Stack, TextField, Typography, Rating } from "@mui/material";
 import { ChevronLeft, ChevronRight, FirstPage, LastPage } from "@mui/icons-material";
 import React from "react";
 import { NumericFormat, NumericFormatProps } from "react-number-format";
-import { Instructions, Nail, RotationDirection, Step } from "@/model";
+import { Instructions, Nail, ProjectVersionInfo, RotationDirection, Step } from "@/model";
 import { Action } from "@/app/action";
 import { fetchAndThrow } from "@/tools/fetch";
 import { useLocalStorage } from "@/hooks";
 import { Speech } from "@/tools/speech";
 import { Point, Line, LineHelper, PointHelper, Vector, VectorHelper } from "@/tools/geometry";
+import { enqueueSnackbar } from "notistack";
+import { CalculationJobInfo } from "@/tools/calculation";
+import { VersionInfo } from "next/dist/server/dev/parse-version-info";
 
 interface CustomProps {
     onChange: (event: { target: { name: string; value: string } }) => void;
@@ -37,7 +42,7 @@ const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
 
 type Options = {
     projectId: string
-    instructionsId: string
+    projectVersion: string
 }
 
 type SVGInfo = {
@@ -50,8 +55,8 @@ type SVGInfo = {
 
 const SVG_MARGIN = 60
 
-export default function ({ projectId, instructionsId }: Options) {
-    const [settings, setSettings] = useLocalStorage(`stepper_settings_${projectId}_${instructionsId}`, {
+export default function ({ projectId, projectVersion }: Options) {
+    const [settings, setSettings] = useLocalStorage(`stepper_settings_${projectId}_${projectVersion}`, {
         step: 0,
         offset: 0,
         thickness: 0.20,
@@ -61,33 +66,44 @@ export default function ({ projectId, instructionsId }: Options) {
     const [state, setState] = React.useState<{
         nails: Array<Nail>
         steps: Array<Step>
-        svgInfo: SVGInfo
+        svgInfo: SVGInfo,
+        rating?: number
     } | undefined>()
 
     React.useEffect(() => {
-        Action.try(async () => {
-            const response = await fetchAndThrow(`/api/project/${projectId}/instructions/${instructionsId}`, { method: 'GET' })
-            const instructions: Instructions = await response.json()
+        load()
 
-            const minX = Math.min(...instructions.nails.map(n => n.position.x - n.diameter / 2)) - SVG_MARGIN
-            const maxX = Math.max(...instructions.nails.map(n => n.position.x + n.diameter / 2)) + SVG_MARGIN
-            const minY = Math.min(...instructions.nails.map(n => n.position.y - n.diameter / 2)) - SVG_MARGIN
-            const maxY = Math.max(...instructions.nails.map(n => n.position.y + n.diameter / 2)) + SVG_MARGIN
-            setState({
-                ...instructions,
-                svgInfo: {
-                    minX,
-                    maxX,
-                    minY,
-                    maxY,
-                    center: {
-                        x: (minX + maxX) / 2,
-                        y: (minY + maxY) / 2,
+        async function load() {
+            try {
+                const instructionPromise = fetchAndThrow(`/api/project/${projectId}/${projectVersion}/instructions`, { method: 'GET' })
+                const versionInfoPromise = fetchAndThrow(`/api/project/${projectId}/${projectVersion}/versioninfo`, { method: 'GET' })                
+
+                const instructions: Instructions = await (await instructionPromise)?.json()
+                const versionInfo: ProjectVersionInfo = await (await versionInfoPromise).json()
+
+                const minX = Math.min(...instructions.nails.map(n => n.position.x - n.diameter / 2)) - SVG_MARGIN
+                const maxX = Math.max(...instructions.nails.map(n => n.position.x + n.diameter / 2)) + SVG_MARGIN
+                const minY = Math.min(...instructions.nails.map(n => n.position.y - n.diameter / 2)) - SVG_MARGIN
+                const maxY = Math.max(...instructions.nails.map(n => n.position.y + n.diameter / 2)) + SVG_MARGIN
+                setState({
+                    ...instructions,
+                    rating: versionInfo.rating,
+                    svgInfo: {
+                        minX,
+                        maxX,
+                        minY,
+                        maxY,
+                        center: {
+                            x: (minX + maxX) / 2,
+                            y: (minY + maxY) / 2,
+                        }
                     }
-                }
-            })
-        })
-    }, [projectId, instructionsId])
+                })
+            }
+            catch (e) {
+            }
+        }
+    }, [projectId, projectVersion])
 
     async function goToStep(number: number) {
         setSettings({
@@ -145,8 +161,22 @@ export default function ({ projectId, instructionsId }: Options) {
         return state.nails[idx]
     }
 
+    async function handleRate(rating?: number) {
+        try {
+            await fetchAndThrow(`/api/project/${projectId}/${projectVersion}/rate`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    rating
+                })
+            })
+        }
+        catch (e) {
+            console.error(e)
+        }
+    }
+
     if (!state)
-        return <React.Fragment>Loading ...</React.Fragment>
+        return <React.Fragment>No data</React.Fragment>
 
     let step = settings.step
 
@@ -249,6 +279,12 @@ export default function ({ projectId, instructionsId }: Options) {
                 </Grid>
 
                 <Grid item xs={3}>
+                    <Rating
+                        size="small"
+                        value={state.rating}
+                        precision={0.5}
+                        onChange={(e, newValue) => handleRate(newValue ?? undefined)}>
+                    </Rating>
                     {srcNail && <Typography fontSize={12} color='grey'>src: {srcNailIdx} | x:{srcNail.position.x.toFixed(2)} y:{srcNail.position.y.toFixed(2)}</Typography>}
                     {dstNail && <Typography fontSize={12} color='grey'>dst: {dstNailIdx} | x:{dstNail.position.x.toFixed(2)} y:{dstNail.position.y.toFixed(2)}</Typography>}
                 </Grid>
@@ -265,6 +301,7 @@ export default function ({ projectId, instructionsId }: Options) {
                     viewBox={`${state.svgInfo.minX} ${state.svgInfo.minY} ${state.svgInfo.maxX - state.svgInfo.minX} ${state.svgInfo.maxY - state.svgInfo.minY}`}
                     preserveAspectRatio="xMidYMid"
                     height='100%'
+                    width='100%'
                 >
                     <linearGradient
                         id="gradient_0000" >

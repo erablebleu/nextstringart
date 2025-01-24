@@ -1,6 +1,5 @@
-import { DataDirectory } from "@/global"
-import { Project, Thread } from "@/model"
-import { File } from "@/tools/file.back"
+import { Instructions, Project, ProjectSettings, Thread } from "@/model"
+import { projectRepository } from "@/tools/api"
 import { JimpHelper } from "@/tools/imaging/jimpHelper"
 import { Jimp } from "jimp"
 import { join } from "node:path"
@@ -10,9 +9,16 @@ const outDirectory = join(__dirname, 'out')
 run()
 
 async function run() {
-    const projectFilePath: string = join(DataDirectory, 'project/0b0bed28-e497-4590-a02d-5d5385257696/project.json')
-    const project: Project = await File.readJSON<Project>(projectFilePath)
-    const thread: Thread = project.threads[0]
+    const projectId = '0b0bed28-e497-4590-a02d-5d5385257696'
+    const projectVersion = '20250124134500000'
+    const project: Project = await projectRepository.read(projectId)
+    const instructionsRepository = projectRepository.getInstructionsRepository(projectId)
+    const settingsRepository = projectRepository.getSettingsRepository(projectId)
+
+    const projectSettings: ProjectSettings = await settingsRepository.read(projectVersion)
+    const instructions: Instructions = await instructionsRepository.read(projectVersion)
+
+    const thread: Thread = projectSettings.threads[0]
 
     const image = await Jimp.read(thread.imageInfo.imageData)
 

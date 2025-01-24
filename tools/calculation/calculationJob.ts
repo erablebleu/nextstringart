@@ -1,7 +1,8 @@
-import { Entity, Instructions, Project } from "@/model"
+import { Entity, Instructions, Project, ProjectSettings } from "@/model"
 import EventEmitter from "node:events"
 import { PromiseWithResolvers } from "../promiseWithResolver"
 import { CalculationWorker, CalculationWorkerInfo } from "./workers/calculationWorker"
+import { CalculationHelper } from "./workers/calculationHelper"
 
 export enum CalculationJobStatus {
     Pending,
@@ -18,7 +19,6 @@ export type CalculationJobInfo = CalculationWorkerInfo & {
 }
 
 export class CalculationJob {
-    private readonly _project: Project
     private readonly _worker: CalculationWorker
     private _status: CalculationJobStatus = CalculationJobStatus.Pending
     private readonly _promiseWithResolvers = new PromiseWithResolvers<Instructions>()
@@ -29,16 +29,18 @@ export class CalculationJob {
 
     public readonly id: string
     public readonly projectId: string
+    public readonly projectVersion: string
     public readonly event: EventEmitter = new EventEmitter()
 
     public getStatus = () => this._status
     public getResult = async () => this._promiseWithResolvers.promise
 
-    constructor(project: Project & Entity) {
+    constructor(projectId: string, projectVersion: string, project: Project & Entity, projectSettings: ProjectSettings) {
+        this.projectId = projectId
+        this.projectVersion = projectVersion
+
         this.id = crypto.randomUUID()
-        this._project = project
-        this.projectId = project.id
-        this._worker = CalculationWorker.get(project)
+        this._worker = CalculationHelper.getWorker(projectSettings)
     }
 
     private setStatus(status: CalculationJobStatus) {

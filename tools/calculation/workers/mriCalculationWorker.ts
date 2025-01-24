@@ -1,4 +1,4 @@
-import { Instructions, Nail, NailMap, Project, RotationDirection, Step, Thread } from "@/model"
+import { Instructions, Nail, NailMap, ProjectSettings, RotationDirection, Step, Thread } from "@/model"
 import { CalculationWorker } from "./calculationWorker"
 import { Line, LineHelper, Point } from "@/tools/geometry"
 import { PixelLineHelper, PixelLineMode, WeightPoint } from "@/tools/calculation"
@@ -32,7 +32,7 @@ function radon(p0: Point, p1: Point): { a: number, s: number } {
 export class MriCalculationWorker extends CalculationWorker {
 
     protected override async internalRun(nailMap: NailMap, imageDatas: Array<Uint8Array<ArrayBuffer>>): Promise<Instructions> {
-        const project: Project = this.project
+        const project: ProjectSettings = this.projectSettings
         const nails: Array<Nail> = nailMap.nails
         const HEATMAP_SIZE = 400
 

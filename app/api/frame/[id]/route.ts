@@ -14,7 +14,7 @@ export const GET = withMiddleware(async (_, {params}: {params: Promise<IdParamet
 })
 
 // UPDATE
-export const POST = withMiddleware(async (req: NextRequest, {params}: {params: Promise<IdParameters>}) => {
+export const PUT = withMiddleware(async (req: NextRequest, {params}: {params: Promise<IdParameters>}) => {
     const id = (await params).id
     const data: Frame & Entity = await req.json()
     data.id = id

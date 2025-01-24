@@ -1,15 +1,17 @@
 'use client'
 
-import { Button, ButtonGroup, Grid, MenuItem, Select, Stack, Typography } from "@mui/material";
-import React from "react";
-import { Action } from "@/app/action";
-import { fetchAndThrow } from "@/tools/fetch";
-import { ChevronLeft, ChevronRight, FirstPage, LastPage, Save } from "@mui/icons-material";
-import { enqueueSnackbar } from "notistack";
-import { Project, Frame, NailMap, NailMapHelper, Nail, Entity } from "@/model";
+import { Button, ButtonGroup, Grid, MenuItem, Select, Stack, Typography } from "@mui/material"
+import React from "react"
+import { Action } from "@/app/action"
+import { fetchAndThrow } from "@/tools/fetch"
+import { ChevronLeft, ChevronRight, FirstPage, LastPage, Save } from "@mui/icons-material"
+import { enqueueSnackbar } from "notistack"
+import { Frame, NailMap, NailMapHelper, Nail, Entity, ProjectSettings } from "@/model"
+import { useRouter } from "next/navigation"
 
 type Options = {
     projectId: string
+    projectVersion: string
 }
 
 type SVGInfo = {
@@ -21,12 +23,13 @@ type SVGInfo = {
 
 const SVG_MARGIN = 60
 
-export default function ({ projectId }: Options) {
+export default function ({ projectId, projectVersion }: Options) {
+    const router = useRouter()
     const [isDragging, setIsDragging] = React.useState(false)
     const [index, setIndex] = React.useState(0)
 
     const [state, setState] = React.useState<{
-        project: Project
+        projectSettings: ProjectSettings
         frames: Array<Frame & Entity>
         nailMap: NailMap
         svgInfo: SVGInfo
@@ -34,17 +37,17 @@ export default function ({ projectId }: Options) {
 
     React.useEffect(() => {
         Action.try(async () => {
-            const resProject = await fetchAndThrow(`/api/project/${projectId}`, { method: 'GET' })
-            const project: Project = await resProject.json()
+            const resProject = await fetchAndThrow(`/api/project/${projectId}/${projectVersion}/settings`, { method: 'GET' })
+            const projectSettings: ProjectSettings = await resProject.json()
             const resFrames = await fetchAndThrow(`/api/frame`, { method: 'GET' })
             const frames: Array<Frame & Entity> = await resFrames.json()
-            const frame: Frame & Entity = frames.find((x: Frame & Entity) => x.id == project.frameId) ?? frames[0]
+            const frame: Frame & Entity = frames.find((x: Frame & Entity) => x.id == projectSettings.frameId) ?? frames[0]
             const nailMap: NailMap = NailMapHelper.get(frame)
 
-            project.frameId = frame.id
+            projectSettings.frameId = frame.id
 
             setState({
-                project,
+                projectSettings,
                 frames,
                 nailMap,
                 svgInfo: getSvgInfo(nailMap)
@@ -65,11 +68,11 @@ export default function ({ projectId }: Options) {
         if (!event.shiftKey) return
         setState({
             ...state!,
-            project: {
-                ...state!.project,
+            projectSettings: {
+                ...state!.projectSettings,
                 nailMapTransformation: {
-                    ...state!.project.nailMapTransformation,
-                    scale: state!.project.nailMapTransformation.scale * (1 - 0.0002 * event.deltaY)
+                    ...state!.projectSettings.nailMapTransformation,
+                    scale: state!.projectSettings.nailMapTransformation.scale * (1 - 0.0002 * event.deltaY)
                 }
             }
         })
@@ -79,13 +82,13 @@ export default function ({ projectId }: Options) {
         if (!isDragging) return
         setState({
             ...state!,
-            project: {
-                ...state!.project,
+            projectSettings: {
+                ...state!.projectSettings,
                 nailMapTransformation: {
-                    ...state!.project.nailMapTransformation,
+                    ...state!.projectSettings.nailMapTransformation,
                     position: {
-                        x: state!.project.nailMapTransformation.position.x + event.movementX * state!.project.nailMapTransformation.scale,
-                        y: state!.project.nailMapTransformation.position.y + event.movementY * state!.project.nailMapTransformation.scale,
+                        x: state!.projectSettings.nailMapTransformation.position.x + event.movementX * state!.projectSettings.nailMapTransformation.scale,
+                        y: state!.projectSettings.nailMapTransformation.position.y + event.movementY * state!.projectSettings.nailMapTransformation.scale,
                     }
                 }
             }
@@ -101,8 +104,8 @@ export default function ({ projectId }: Options) {
 
         setState({
             ...state!,
-            project: {
-                ...state!.project,
+            projectSettings: {
+                ...state!.projectSettings,
                 frameId,
             },
             nailMap,
@@ -116,7 +119,7 @@ export default function ({ projectId }: Options) {
         try {
             await fetchAndThrow(`/api/project/${projectId}`, {
                 method: 'POST',
-                body: JSON.stringify(state!.project),
+                body: JSON.stringify(state!.projectSettings),
             })
 
             enqueueSnackbar('Data saved', { variant: 'success' })
@@ -158,7 +161,7 @@ export default function ({ projectId }: Options) {
                         </Button>
                         <Select
                             size="small"
-                            value={state.project.frameId}
+                            value={state.projectSettings.frameId}
                             onChange={(e) => handleFrameChange(e.target.value as string)}
                         >
                             {state.frames.map((x: Frame & Entity) => (
@@ -216,17 +219,18 @@ export default function ({ projectId }: Options) {
                     viewBox={`${state.svgInfo.minX} ${state.svgInfo.minY} ${state.svgInfo.maxX - state.svgInfo.minX} ${state.svgInfo.maxY - state.svgInfo.minY}`}
                     preserveAspectRatio="xMidYMid"
                     height='100%'
+                    width='100%'
                     onWheel={onWheel}
                     onMouseDown={(e) => setIsDragging(e.shiftKey)}
                     onMouseUp={() => setIsDragging(false)}
                     onMouseLeave={() => setIsDragging(false)}
                     onMouseMove={onMouseMove}>
                     <g
-                        transform={`translate(${state.project.nailMapTransformation.position.x}, ${state.project.nailMapTransformation.position.y}) scale(${state.project.nailMapTransformation.scale})`}>
-                        {state.project.threads.length > 0 &&
+                        transform={`translate(${state.projectSettings.nailMapTransformation.position.x}, ${state.projectSettings.nailMapTransformation.position.y}) scale(${state.projectSettings.nailMapTransformation.scale})`}>
+                        {state.projectSettings.threads.length > 0 &&
                             <image
                                 onDragStart={e => e.preventDefault()}
-                                xlinkHref={`data:image/png;${state.project.threads[0].imageInfo.imageData}`} />}
+                                xlinkHref={`data:image/png;${state.projectSettings.threads[0].imageInfo.imageData}`} />}
                     </g>
                     <g>
                         {state.nailMap.lines.length > 0 && state.nailMap.lines[index].map((value: number) => (

@@ -1,6 +1,4 @@
-import { CalculationMethod, Frame, Instructions, NailMap, NailMapHelper, Project, Thread } from "@/model"
-import { MriCalculationWorker } from "./mriCalculationWorker"
-import { DeltaCalculationWorker } from "./deltaCalculationWorker"
+import { Frame, Instructions, NailMap, NailMapHelper, ProjectSettings, Thread } from "@/model"
 import { frameRepository } from "@/tools/api"
 import { JimpHelper } from "@/tools/imaging/jimpHelper"
 
@@ -14,7 +12,7 @@ export type CalculationWorkerInfo = {
 }
 
 export abstract class CalculationWorker {
-    protected readonly project: Project
+    protected readonly projectSettings: ProjectSettings
     protected canceled: boolean = false
     protected threadIndex: number = 0
     protected stepIndex: number = 0
@@ -25,20 +23,13 @@ export abstract class CalculationWorker {
 
     public getProgress = () => Math.min(1, this.threadIndex / this.threadCount + (this.stepIndex / this.stepCount / this.threadCount))
 
-    constructor(project: Project) {
-        this.project = project
-        this.threadCount = project.threads.length
+    constructor(projectSettings: ProjectSettings) {
+        this.projectSettings = projectSettings
+        this.threadCount = projectSettings.threads.length
     }
 
     public cancel() {
         this.canceled = true
-    }
-
-    public static get(project: Project): CalculationWorker {
-        switch (project.calculationMethod) {
-            case CalculationMethod.mri: return new MriCalculationWorker(project)
-            case CalculationMethod.delta: return new DeltaCalculationWorker(project)
-        }
     }
 
     public getInfo(): CalculationWorkerInfo {
@@ -54,9 +45,9 @@ export abstract class CalculationWorker {
 
     public async run(): Promise<Instructions> {
         this.startedAt = new Date()
-        const frame: Frame = await frameRepository.read(this.project.frameId)
+        const frame: Frame = await frameRepository.read(this.projectSettings.frameId)
         const nailMap: NailMap = NailMapHelper.get(frame)
-        const imageDatas: Array<Uint8Array<ArrayBuffer>> = await Promise.all(this.project.threads
+        const imageDatas: Array<Uint8Array<ArrayBuffer>> = await Promise.all(this.projectSettings.threads
             .map((thread: Thread) => JimpHelper.getImageData(thread)))
 
         return await this.internalRun(nailMap, imageDatas)

@@ -1,34 +1,43 @@
 import { NextRequest, NextResponse } from "next/server"
-import { withMiddleware, APINextResponse, projectRepository } from "@/tools/api"
+import { withMiddleware, APINextResponse, projectRepository, calculator } from "@/tools/api"
 import { IdParameters } from "@/app/parameters"
-import { Entity, Project } from "@/model"
-
-const repository = projectRepository
+import { Entity, Project, ProjectSettings } from "@/model"
 
 // READ
 export const GET = withMiddleware(async (_, {params}: {params: Promise<IdParameters>}) => {
-    const id = (await params).id
-    const result = await repository.read(id)
+    const projectId = (await params).id
+    const result = await projectRepository.read(projectId)
 
     return NextResponse.json(result)
 })
 
 // UPDATE
-export const POST = withMiddleware(async (req: NextRequest, {params}: {params: Promise<IdParameters>}) => {
-    const id = (await params).id
+export const PUT = withMiddleware(async (req: NextRequest, {params}: {params: Promise<IdParameters>}) => {
+    const projectId = (await params).id
     const data: Project & Entity = await req.json()
-    data.id = id
+    data.id = projectId
 
-    await repository.update(data)
+    await projectRepository.update(data)
 
     return APINextResponse.Success
 })
 
+// CREATE VERSION
+export const POST = withMiddleware(async (req: NextRequest, {params}: {params: Promise<IdParameters>}) => {
+    const projectId = (await params).id
+    const data: ProjectSettings = await req.json()
+    const projectVersion = await projectRepository.createVersion(projectId, data)
+
+    calculator.enqueueJob(projectId, projectVersion)
+
+    return NextResponse.json(projectVersion)
+})
+
 // DELETE
 export const DELETE = withMiddleware(async (_, {params}: {params: Promise<IdParameters>}) => {
-    const id = (await params).id
+    const projectId = (await params).id
 
-    await repository.delete(id)
+    await projectRepository.delete(projectId)
 
     return APINextResponse.Success
 })

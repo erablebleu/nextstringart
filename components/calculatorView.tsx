@@ -1,15 +1,15 @@
 'use client'
 
-import { Instructions, Entity } from "@/model";
-import { Box, Stack, Typography } from "@mui/material";
-import React from "react";
-import InstructionsList from "./instructionsList";
-import { CalculationJobInfo } from "@/tools/calculation";
-import CalculationList from "./calculationList";
-import Stepper from "./stepper";
+import { Instructions, Entity } from "@/model"
+import { Box, Stack, Typography } from "@mui/material"
+import React from "react"
+import { CalculationJobInfo } from "@/tools/calculation"
+import CalculationList from "./calculationList"
+import Stepper from "./stepper"
 
 type Options = {
     projectId: string
+    projectVersion: string
 }
 
 export default function ({ projectId, }: Options) {
@@ -32,19 +32,6 @@ export default function ({ projectId, }: Options) {
                 direction='column'
                 spacing={1} >
                 <Typography>
-                    Instructions
-                </Typography>
-                <Box
-                    flexGrow={1}
-                    display='flex'
-                    flexDirection='column'>
-                    <InstructionsList
-                        projectId={projectId}
-                        selectedId={selectedInstructions?.id}
-                        onSelected={(item) => setSelectedInstructions(item)}
-                    />
-                </Box>
-                <Typography>
                     Calculations
                 </Typography>
                 <Box
@@ -63,7 +50,7 @@ export default function ({ projectId, }: Options) {
                 spacing={1} >
                 {selectedInstructions && <Stepper
                     projectId={projectId}
-                    instructionsId={selectedInstructions.id}>
+                    projectVersion={selectedInstructions.id}>
                 </Stepper>
                 }
             </Stack>

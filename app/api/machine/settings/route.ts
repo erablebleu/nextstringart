@@ -11,7 +11,7 @@ export const GET = withMiddleware(async (req: NextRequest) => {
 })
 
 // UPDATE
-export const POST = withMiddleware(async (req: NextRequest) => {
+export const PUT = withMiddleware(async (req: NextRequest) => {
     await File.writeJSON(SettingsFilePath, await req.json())
     return NextResponse.json({ ok: true })
 })

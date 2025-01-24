@@ -2,7 +2,7 @@
 
 import FrameList from "@/components/frameList";
 import ProjectList from "@/components/projectList";
-import { Frame, FrameHelper } from "@/model";
+import { Frame, FrameHelper, Project } from "@/model";
 import { fetchAndThrow } from "@/tools/fetch";
 import { InsertDriveFile } from "@mui/icons-material";
 import { Box, Button, ButtonGroup } from "@mui/material";
@@ -30,8 +30,7 @@ export default function () {
 
     async function handleCreateProject() {
         try {
-            const item: any = {
-                id: '',
+            const item: Project = {
                 name: 'new project',
             }
 

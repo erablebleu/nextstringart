@@ -1,15 +1,17 @@
-import { Entity, Instructions, Project } from "@/model";
-import { projectRepository } from "../api";
-import { CalculationJob, CalculationJobStatus } from "./calculationJob";
+import { Entity, Instructions, Project, ProjectSettings } from "@/model"
+import { projectRepository } from "../api"
+import { CalculationJob, CalculationJobStatus } from "./calculationJob"
 
 export class Calculator {
     private readonly _jobs: Array<CalculationJob> = []
 
     public getJobs = () => this._jobs
 
-    public async enqueueJob(projectId: string): Promise<CalculationJob> {
+    public async enqueueJob(projectId: string, projectVersion: string): Promise<CalculationJob> {
         const project: Project & Entity = await projectRepository.read(projectId)
-        const result = new CalculationJob(project)
+        const projectSettings: ProjectSettings = await projectRepository.getSettings(projectId, projectVersion)
+
+        const result = new CalculationJob(projectId, projectVersion, project, projectSettings)
 
         this._jobs.push(result)
         result.event.addListener('status', this.onJobStatusChanged.bind(this))
@@ -24,9 +26,8 @@ export class Calculator {
                 break
 
             case CalculationJobStatus.Finished:
-                const instructionsRepository = projectRepository.getInstructionsRepository(sender.projectId)
                 const instructions: Instructions = await sender.getResult()
-                await instructionsRepository.create(instructions, sender.id)
+                await projectRepository.set(sender.projectId, sender.projectVersion, { instructions })
 
             case CalculationJobStatus.Canceled:
                 sender?.event.removeAllListeners()

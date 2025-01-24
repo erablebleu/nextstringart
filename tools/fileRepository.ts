@@ -1,5 +1,3 @@
-
-
 import fs from 'node:fs'
 import { join } from 'node:path'
 import { Entity } from '@/model'
@@ -16,22 +14,19 @@ export class FileRepository<T> {
         fs.mkdirSync(this.directory, { recursive: true })
     }
 
-    private getFilePath(id: string): string {
+    protected getFilePath(id: string): string {
         return join(this.directory, id, this.fileName)
     }
 
     public async create(data: T, id?: string): Promise<string> {
-        const date = new Date()
         id ??= crypto.randomUUID()
 
         await fs.promises.mkdir(join(this.directory, id), { recursive: true })
 
         await this.update({
             ...data,
-            createdAt: date,
-            updatedAt: date,
             id,
-        }, date)
+        })
 
         return id!
     }
@@ -52,9 +47,7 @@ export class FileRepository<T> {
             }))
     }
 
-    public async update(data: T & Entity, date?: Date): Promise<void> {
-        data.updatedAt = date ?? new Date()
-
+    public async update(data: T & Entity): Promise<void> {
         if (!data.id)
             data.id = crypto.randomUUID()
 

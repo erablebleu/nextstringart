@@ -3,23 +3,27 @@
 import { IdParameters } from "@/app/parameters"
 import ThreadSettings from "@/components/threadSettings"
 import { useData } from "@/hooks"
-import { CalculationMethod, Project, ProjectHelper, Thread } from "@/model"
+import { CalculationMethod, ProjectHelper, ProjectSettings, Thread } from "@/model"
 import { fetchAndThrow } from "@/tools/fetch"
 import { ExpandMore, Save } from "@mui/icons-material"
 import { Accordion, AccordionDetails, AccordionSummary, Button, ButtonGroup, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from "@mui/material"
 import { enqueueSnackbar } from "notistack"
 import React from "react"
 
-export default function ({ params }: { params: IdParameters }) {
+export type Parameters = IdParameters & {
+    version: string
+}
+
+export default function ({ params }: { params: Parameters }) {
     const projectId = params.id
-    const apiUrl = `/api/project/${projectId}`
-    const [project, setProject] = useData<Project>(`/api/project/${projectId}`)
+    const projectVersion = params.version
+    const [projectSettings, setProjectSettings] = useData<ProjectSettings>(`/api/project/${projectId}/${projectVersion}/settings`)
 
     async function handleSave() {
         try {
-            await fetchAndThrow(apiUrl, {
+            await fetchAndThrow(`/api/project/${projectId}`, {
                 method: 'POST',
-                body: JSON.stringify(project),
+                body: JSON.stringify(projectSettings),
             })
 
             enqueueSnackbar('Data saved', { variant: 'success' })
@@ -31,24 +35,13 @@ export default function ({ params }: { params: IdParameters }) {
     }
 
     async function handleCalculationMethodChanged(calculationMethod: CalculationMethod) {
-        setProject({
-            ...project!,
+        setProjectSettings({
+            ...projectSettings!,
             calculationMethod,
         })
     }
 
-    async function handleCalculate() {
-        try {
-            await fetchAndThrow(`/api/project/${projectId}/calculation`, { method: 'POST' })
-            enqueueSnackbar('Calculation successfully started', { variant: 'success' })
-        }
-        catch (e) {
-            console.error(e)
-            enqueueSnackbar('Error starting calculation', { variant: 'error' })
-        }
-    }
-
-    if (!project)
+    if (!projectSettings)
         return <React.Fragment>Loading ...</React.Fragment>
 
     return (
@@ -73,14 +66,11 @@ export default function ({ params }: { params: IdParameters }) {
                         endIcon={<Save />}>
                         Save
                     </Button>
-                    <Button onClick={(e) => setProject({
-                        ...project,
-                        threads: [...project.threads, ProjectHelper.defaultThread()],
+                    <Button onClick={(e) => setProjectSettings({
+                        ...projectSettings,
+                        threads: [...projectSettings.threads, ProjectHelper.defaultThread()],
                     })}>
                         Add Thread
-                    </Button>
-                    <Button onClick={handleCalculate}>
-                        Calculate
                     </Button>
                 </ButtonGroup>
             </Stack>
@@ -108,7 +98,7 @@ export default function ({ params }: { params: IdParameters }) {
                                 labelId="calculation-method-label"
                                 label="Calculation method"
                                 size="small"
-                                value={project.calculationMethod}
+                                value={projectSettings.calculationMethod}
                                 onChange={(e) => handleCalculationMethodChanged(e.target.value as CalculationMethod)}>
                                 {[CalculationMethod.delta, CalculationMethod.mri].map((item: CalculationMethod) =>
                                     <MenuItem key={item} value={item}>{item}
@@ -118,7 +108,7 @@ export default function ({ params }: { params: IdParameters }) {
                     </AccordionDetails>
                 </Accordion>
 
-                {project.threads.map((thread: Thread, index: number) => (
+                {projectSettings.threads.map((thread: Thread, index: number) => (
                     <Accordion
                         key={`thread_${index}`}
                         disableGutters={true}
@@ -137,13 +127,13 @@ export default function ({ params }: { params: IdParameters }) {
                         <AccordionDetails>
                             <ThreadSettings
                                 data={thread}
-                                onChange={(newValue: Thread) => setProject({
-                                    ...project,
-                                    threads: project.threads.map(t => t == thread ? newValue : t)
+                                onChange={(newValue: Thread) => setProjectSettings({
+                                    ...projectSettings,
+                                    threads: projectSettings.threads.map(t => t == thread ? newValue : t)
                                 })}
-                                onDelete={() => setProject({
-                                    ...project,
-                                    threads: project.threads.filter(t => t != thread)
+                                onDelete={() => setProjectSettings({
+                                    ...projectSettings,
+                                    threads: projectSettings.threads.filter(t => t != thread)
                                 })} />
                         </AccordionDetails>
                     </Accordion>

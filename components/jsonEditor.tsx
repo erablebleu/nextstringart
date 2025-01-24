@@ -10,12 +10,14 @@ import React from "react"
 
 export type JsonEditorParameters = {
     url: string
+    saveUrl?: string
+    saveMethod?: string
     value?: string
     onValueChanged?: (value: string) => void
     children?: React.ReactNode
 }
 
-export default function ({ children, url, value, onValueChanged }: JsonEditorParameters) {
+export default function ({ children, url, saveUrl, saveMethod, value, onValueChanged }: JsonEditorParameters) {
     const [state, setState] = React.useState({
         isLoaded: false,
         value: value ?? '',
@@ -64,8 +66,8 @@ export default function ({ children, url, value, onValueChanged }: JsonEditorPar
         }
 
         try {
-            await fetchAndThrow(url, {
-                method: 'POST',
+            await fetchAndThrow(saveUrl ?? url, {
+                method: saveMethod ?? 'PUT',
                 body: value,
             })
 

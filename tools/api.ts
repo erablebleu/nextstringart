@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SerialMachine } from "@/tools/machine/serial";
 import { FrameRepository, ProjectRepository } from "@/repositories";
-import { InstructionsRepository } from "@/repositories/instructionsRepository";
 import { join } from "node:path";
 import { DataDirectory } from "@/global";
 import { Calculator } from "@/tools/calculation";
@@ -27,7 +26,6 @@ const globalForAPI = globalThis as unknown as {
     calculator?: Calculator
     frameRepository?: FrameRepository
     projectRepository?: ProjectRepository
-    instructionsRepository?: InstructionsRepository
 }
 
 export const SettingsFilePath = join(DataDirectory, '/machine/settings.json')
