@@ -1,32 +1,32 @@
-import { useSnackbar } from 'notistack'
-import React, { DependencyList } from 'react'
+'use client'
+
+import { createContext, DependencyList, Dispatch, ReactElement, SetStateAction, useContext, useEffect } from 'react'
 
 export type AppContextType = {
-    appBar?: React.ReactElement
-    setAppBar: React.Dispatch<React.SetStateAction<React.ReactElement | undefined>>
+    appBar?: ReactElement
+    setAppBar: Dispatch<SetStateAction<ReactElement | undefined>>
 }
 
-export const AppContext = React.createContext<AppContextType | undefined>(undefined)
+export const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export namespace App {
 
     function useApp() {
-        const appContext = React.useContext(AppContext)
+        const appContext = useContext(AppContext)
 
         if (!appContext) {
             throw new Error('No AppContext provider found when calling useApp!');
         }
-
 
         return {
             ...appContext,
         }
     }
 
-    export function useAppBar(appBar: React.ReactElement, deps?: DependencyList) {
+    export function useAppBar(appBar: ReactElement, deps?: DependencyList) {
         const { setAppBar } = useApp()
 
-        React.useEffect(() => {
+        useEffect(() => {
             setAppBar(appBar)
 
             return () => { setAppBar(undefined) }

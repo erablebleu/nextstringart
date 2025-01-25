@@ -8,15 +8,14 @@ import { fetchAndThrow } from "@/tools/fetch"
 import { ExpandMore, Save } from "@mui/icons-material"
 import { Accordion, AccordionDetails, AccordionSummary, Button, ButtonGroup, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from "@mui/material"
 import { enqueueSnackbar } from "notistack"
-import React from "react"
+import { Fragment, use } from "react"
 
 export type Parameters = IdParameters & {
     version: string
 }
 
-export default function ({ params }: { params: Parameters }) {
-    const projectId = params.id
-    const projectVersion = params.version
+export default function ({ params }: { params: Promise<Parameters> }) {
+    const { id: projectId, version: projectVersion } = use(params)
     const [projectSettings, setProjectSettings] = useData<ProjectSettings>(`/api/project/${projectId}/${projectVersion}/settings`)
 
     async function handleSave() {
@@ -42,7 +41,9 @@ export default function ({ params }: { params: Parameters }) {
     }
 
     if (!projectSettings)
-        return <React.Fragment>Loading ...</React.Fragment>
+        return <Fragment>
+            Loading ...
+        </Fragment>
 
     return (
         <Stack

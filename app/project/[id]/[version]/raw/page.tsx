@@ -2,7 +2,6 @@
 
 import { IdParameters } from "@/app/parameters"
 import JsonEditor from "@/components/jsonEditor"
-import React from "react"
 
 export type Parameters = IdParameters & {
     version: string

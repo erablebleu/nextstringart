@@ -1,8 +1,8 @@
 import { Instructions, Project, ProjectSettings, Thread } from "@/model"
-import { projectRepository } from "@/tools/api"
 import { JimpHelper } from "@/tools/imaging/jimpHelper"
 import { Jimp } from "jimp"
 import { join } from "node:path"
+import { projectRepository } from "@/global"
 
 const outDirectory = join(__dirname, 'out')
 
@@ -12,11 +12,9 @@ async function run() {
     const projectId = '0b0bed28-e497-4590-a02d-5d5385257696'
     const projectVersion = '20250124134500000'
     const project: Project = await projectRepository.read(projectId)
-    const instructionsRepository = projectRepository.getInstructionsRepository(projectId)
-    const settingsRepository = projectRepository.getSettingsRepository(projectId)
 
-    const projectSettings: ProjectSettings = await settingsRepository.read(projectVersion)
-    const instructions: Instructions = await instructionsRepository.read(projectVersion)
+    const projectSettings: ProjectSettings = await projectRepository.getSettings(projectId, projectVersion)
+    const instructions: Instructions = await projectRepository.getInstructions(projectId, projectVersion)
 
     const thread: Thread = projectSettings.threads[0]
 

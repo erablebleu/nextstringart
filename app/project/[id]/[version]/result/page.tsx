@@ -1,53 +1,49 @@
 'use client'
 
-import React from "react"
+import { Fragment, use } from "react"
 import { IdParameters } from "@/app/parameters"
 import Stepper from "@/components/stepper"
-import { CalculationJobInfo } from "@/tools/calculation"
-import { LinearProgress } from "@mui/material"
+import { LinearProgress, Stack, Typography } from "@mui/material"
+import useSWR from "swr"
+import { CalculationJobInfo } from "@/tools/calculation/calculationJob"
 
 export type Parameters = IdParameters & {
     version: string
 }
 
-export default function ({ params }: { params: Parameters }) {
-    const projectId = params.id
-    const projectVersion = params.version
+const fetcher = (url: URL) => fetch(url, { method: 'GET' }).then(r => r.json())
 
-    const [state, setState] = React.useState<{
-        calculationInfo?: CalculationJobInfo
-    } | undefined>()
+export default function ({ params }: { params: Promise<Parameters> }) {
+    const { id: projectId, version: projectVersion } = use(params)
+    const { data, mutate, isLoading } = useSWR<CalculationJobInfo & CalculationJobInfo>(`/api/project/${projectId}/${projectVersion}/versioninfo`, fetcher, {
+        refreshInterval: d => d?.progress === undefined ? 0 : 500,
+        dedupingInterval: 500,
+    })
 
-    React.useEffect(() => {
-        load()
-
-        async function load() {
-            const response = await fetch(`/api/project/${projectId}/${projectVersion}/calculation`, { method: 'GET' })
-
-            const calculationInfo: CalculationJobInfo | undefined = await response?.json()
-
-            setState({
-                calculationInfo
-            })
-        }
-    }, [projectId, projectVersion])
-
-    if (!state) {
-        return <React.Fragment>
-            Loading
-        </React.Fragment>
+    if (isLoading || !data) {
+        return (
+            <Fragment>
+                Loading
+            </Fragment>
+        )
+    }
+    if (data.progress == undefined) {
+        return (
+            <Stepper
+                projectId={projectId}
+                projectVersion={projectVersion}>
+            </Stepper>
+        )
     }
 
-    if (state.calculationInfo?.progress !== undefined && state.calculationInfo.progress < 1) {
-        return <React.Fragment>
-            <LinearProgress variant="determinate" value={state.calculationInfo.progress * 100}
+    return (
+        <Stack
+            margin={1}
+            spacing={1}>
+            <LinearProgress variant="determinate" value={data.progress * 100}
                 sx={{ width: '100%' }} />
-        </React.Fragment>
-    }
-    else {
-        return <Stepper
-            projectId={projectId}
-            projectVersion={projectVersion}>
-        </Stepper>
-    }
+            <Typography>thread: {data.threadIndex + 1} / {data.threadCount}</Typography>
+            <Typography>step: {data.stepIndex + 1} / {data.stepCount}</Typography>
+        </Stack>
+    )
 }

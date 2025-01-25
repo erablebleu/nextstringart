@@ -2,10 +2,10 @@
 
 import { Instructions, Entity } from "@/model"
 import { Box, Stack, Typography } from "@mui/material"
-import React from "react"
-import { CalculationJobInfo } from "@/tools/calculation"
+import { useState } from "react"
 import CalculationList from "./calculationList"
 import Stepper from "./stepper"
+import { CalculationJobInfo } from "@/tools/calculation/calculationJob"
 
 type Options = {
     projectId: string
@@ -13,8 +13,8 @@ type Options = {
 }
 
 export default function ({ projectId, }: Options) {
-    const [selectedInstructions, setSelectedInstructions] = React.useState<(Instructions & Entity) | undefined>()
-    const [selectedCalculation, setSelectedCalculation] = React.useState<CalculationJobInfo | undefined>()
+    const [selectedInstructions, setSelectedInstructions] = useState<(Instructions & Entity) | undefined>()
+    const [selectedCalculation, setSelectedCalculation] = useState<CalculationJobInfo | undefined>()
 
     return (
         <Stack

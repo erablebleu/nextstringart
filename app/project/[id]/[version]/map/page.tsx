@@ -2,7 +2,6 @@
 
 import { IdParameters } from "@/app/parameters"
 import Mapper from "@/components/mapper"
-import React from "react"
 
 export type Parameters = IdParameters & {
     version: string

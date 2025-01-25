@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { withMiddleware, APINextResponse, projectRepository, calculator } from "@/tools/api"
+import { withMiddleware, APINextResponse} from "@/tools/api"
 import { IdParameters } from "@/app/parameters"
 import { Entity, Project, ProjectSettings } from "@/model"
+import { calculator, projectRepository } from "@/global"
 
 // READ
 export const GET = withMiddleware(async (_, {params}: {params: Promise<IdParameters>}) => {
@@ -28,7 +29,7 @@ export const POST = withMiddleware(async (req: NextRequest, {params}: {params: P
     const data: ProjectSettings = await req.json()
     const projectVersion = await projectRepository.createVersion(projectId, data)
 
-    calculator.enqueueJob(projectId, projectVersion)
+    await calculator.enqueueJob(projectId, projectVersion)
 
     return NextResponse.json(projectVersion)
 })

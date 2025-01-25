@@ -1,7 +1,6 @@
 'use server'
 
 import { IdParameters } from "@/app/parameters"
-import React from "react"
 import CalculatorView from "@/components/calculatorView"
 
 export type Parameters = IdParameters & {

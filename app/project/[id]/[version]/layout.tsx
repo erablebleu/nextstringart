@@ -1,6 +1,6 @@
 'use client'
 
-import React from "react"
+import { Fragment, ReactNode, SyntheticEvent, use } from "react"
 import { usePathname, useRouter } from "next/navigation";
 import { IdParameters } from "@/app/parameters";
 import { Box, Button, ButtonGroup, Tab, Tabs } from "@mui/material";
@@ -14,9 +14,8 @@ export type Parameters = IdParameters & {
     version: string
 }
 
-export default function ({ children, params }: { children: React.ReactNode, params: Parameters }) {
-    const projectId = params.id
-    const projectVersion = params.version
+export default function ({ children, params }: { children: ReactNode, params: Promise<Parameters> }) {
+    const { id: projectId, version: projectVersion } = use(params)
     const router = useRouter()
     const pathname = usePathname()
     let tab = pathname.split('/').at(-1)
@@ -24,7 +23,7 @@ export default function ({ children, params }: { children: React.ReactNode, para
     if (!tab || !['raw', 'settings', 'map', 'result'].includes(tab))
         tab = 'raw'
 
-    async function handleTabChange(event: React.SyntheticEvent, tab: string) {
+    async function handleTabChange(event: SyntheticEvent, tab: string) {
         router.push(`/project/${projectId}/${projectVersion}/${tab}`)
     }
 
@@ -42,7 +41,7 @@ export default function ({ children, params }: { children: React.ReactNode, para
     }
 
     App.useAppBar(
-        <React.Fragment>
+        <Fragment>
             <Box
                 flexGrow={1}>
                 <Tabs value={tab} onChange={handleTabChange}>
@@ -62,7 +61,7 @@ export default function ({ children, params }: { children: React.ReactNode, para
                     </Button>
                 </ButtonGroup>
             </Box>
-        </React.Fragment>, [projectId, projectVersion, tab])
+        </Fragment>, [projectId, projectVersion, tab])
 
     return (
         <Box

@@ -1,13 +1,13 @@
 'use client'
 
-import React from "react"
+import { ReactNode, use } from "react"
 import { IdParameters } from "@/app/parameters";
 import { Box, Divider, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import ProjectVersionList from "@/components/projectVersionList";
 import { useRouter } from "next/navigation";
 
-export default function ({ children, params }: { children: React.ReactNode, params: IdParameters }) {
-    const projectId = params.id
+export default function ({ children, params }: { children: ReactNode, params: Promise<IdParameters> }) {
+    const { id: projectId} = use(params)
     const router = useRouter()
 
     return (

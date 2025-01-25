@@ -1,5 +1,4 @@
-import ProjectList from "@/components/projectList";
-import React from "react";
+import ProjectList from "@/components/projectList"
 
 export default async function () {
     return (

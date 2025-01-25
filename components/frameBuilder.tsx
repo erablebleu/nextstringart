@@ -1,14 +1,16 @@
-import { Box, Button, ButtonGroup, Stack, TextField } from "@mui/material";
-import React from "react";
-import { CircleFrame, PolygonFrame } from "@/model";
+'use client'
+
+import { Box, Button, ButtonGroup, Stack, TextField } from "@mui/material"
+import { CircleFrame, PolygonFrame } from "@/model"
+import { Fragment, useState } from "react"
 
 interface Options {
     onChange: (frame: PolygonFrame | CircleFrame | undefined) => void
 }
 
 export default function ({ onChange }: Options) {
-    const [canConfirm, setCanConfirm] = React.useState(false)
-    const [state, setState] = React.useState<{
+    const [canConfirm, setCanConfirm] = useState(false)
+    const [state, setState] = useState<{
         step: number,
         shape?: string,
         settings?: string,
@@ -17,9 +19,9 @@ export default function ({ onChange }: Options) {
     })
 
     return (
-        <React.Fragment>
+        <Fragment>
             <Box>
-                {state.step == 0 && <React.Fragment>
+                {state.step == 0 && <Fragment>
                     <ButtonGroup>
                         <Button onClick={() => {
                             setCanConfirm(true)
@@ -39,9 +41,9 @@ export default function ({ onChange }: Options) {
                             </svg>
                         </Button>
                     </ButtonGroup>
-                </React.Fragment>}
+                </Fragment>}
 
-                {state.step == 1 && <React.Fragment>
+                {state.step == 1 && <Fragment>
 
                     <TextField
                         value={state.settings}
@@ -55,13 +57,13 @@ export default function ({ onChange }: Options) {
 
                     <ButtonGroup>
                     </ButtonGroup>
-                </React.Fragment>}
+                </Fragment>}
             </Box>
 
             <ButtonGroup>
                 {canConfirm && <Button color="success" onClick={() => onChange(JSON.parse(state.settings!))}>Confirm</Button>}
                 <Button color="error" onClick={() => onChange(undefined)}>Cancel</Button>
             </ButtonGroup>
-        </React.Fragment>
+        </Fragment>
     )
 }

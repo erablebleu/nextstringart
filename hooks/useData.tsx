@@ -1,11 +1,13 @@
-import { Action } from '@/app/action';
-import { fetchAndThrow } from '@/tools/fetch';
-import React from 'react';
+'use client'
 
-export function useData<T>(url: string | URL | globalThis.Request, init?: RequestInit): [T | undefined, React.Dispatch<React.SetStateAction<T | undefined>>] {
-    const [value, setValue] = React.useState<T>()
+import { Action } from '@/app/action'
+import { fetchAndThrow } from '@/tools/fetch'
+import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 
-    React.useEffect(() => {
+export function useData<T>(url: string | URL | globalThis.Request, init?: RequestInit): [T | undefined, Dispatch<SetStateAction<T | undefined>>] {
+    const [value, setValue] = useState<T>()
+
+    useEffect(() => {
         Action.try(async () => {
             const result = await fetchAndThrow(url, { method: 'GET' })
             const data = await result.json()

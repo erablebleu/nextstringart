@@ -1,25 +1,21 @@
 'use client'
 
-import { FormControlLabel, Checkbox, Grid, Box, Button, ButtonGroup, Stack, TextField, Typography, Rating } from "@mui/material";
-import { ChevronLeft, ChevronRight, FirstPage, LastPage } from "@mui/icons-material";
-import React from "react";
-import { NumericFormat, NumericFormatProps } from "react-number-format";
-import { Instructions, Nail, ProjectVersionInfo, RotationDirection, Step } from "@/model";
-import { Action } from "@/app/action";
-import { fetchAndThrow } from "@/tools/fetch";
-import { useLocalStorage } from "@/hooks";
-import { Speech } from "@/tools/speech";
-import { Point, Line, LineHelper, PointHelper, Vector, VectorHelper } from "@/tools/geometry";
-import { enqueueSnackbar } from "notistack";
-import { CalculationJobInfo } from "@/tools/calculation";
-import { VersionInfo } from "next/dist/server/dev/parse-version-info";
+import { FormControlLabel, Checkbox, Grid, Button, ButtonGroup, Stack, TextField, Typography, Rating } from "@mui/material"
+import { ChevronLeft, ChevronRight, FirstPage, LastPage } from "@mui/icons-material"
+import { NumericFormat, NumericFormatProps } from "react-number-format"
+import { Instructions, Nail, ProjectVersionInfo, RotationDirection, Step } from "@/model"
+import { fetchAndThrow } from "@/tools/fetch"
+import { useLocalStorage } from "@/hooks"
+import { Speech } from "@/tools/speech"
+import { Point, Line, LineHelper, PointHelper, Vector, VectorHelper } from "@/tools/geometry"
+import { ChangeEvent, forwardRef, Fragment, useEffect, useState } from "react"
 
 interface CustomProps {
     onChange: (event: { target: { name: string; value: string } }) => void;
     name: string;
 }
 
-const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
+const NumericFormatCustom = forwardRef<NumericFormatProps, CustomProps>(
     function NumericFormatCustom(props, ref) {
         const { onChange, ...other } = props;
         return (
@@ -63,20 +59,20 @@ export default function ({ projectId, projectVersion }: Options) {
         speech: true,
     })
 
-    const [state, setState] = React.useState<{
+    const [state, setState] = useState<{
         nails: Array<Nail>
         steps: Array<Step>
         svgInfo: SVGInfo,
         rating?: number
     } | undefined>()
 
-    React.useEffect(() => {
+    useEffect(() => {
         load()
 
         async function load() {
             try {
                 const instructionPromise = fetchAndThrow(`/api/project/${projectId}/${projectVersion}/instructions`, { method: 'GET' })
-                const versionInfoPromise = fetchAndThrow(`/api/project/${projectId}/${projectVersion}/versioninfo`, { method: 'GET' })                
+                const versionInfoPromise = fetchAndThrow(`/api/project/${projectId}/${projectVersion}/versioninfo`, { method: 'GET' })
 
                 const instructions: Instructions = await (await instructionPromise)?.json()
                 const versionInfo: ProjectVersionInfo = await (await versionInfoPromise).json()
@@ -147,7 +143,7 @@ export default function ({ projectId, projectVersion }: Options) {
         }
     }
 
-    function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+    function handleChange(event: ChangeEvent<HTMLInputElement>) {
         setSettings({
             ...settings,
             [event.target.name]: event.target.value,
@@ -169,6 +165,10 @@ export default function ({ projectId, projectVersion }: Options) {
                     rating
                 })
             })
+            setState({
+                ...state!,
+                rating,
+            })
         }
         catch (e) {
             console.error(e)
@@ -176,7 +176,9 @@ export default function ({ projectId, projectVersion }: Options) {
     }
 
     if (!state)
-        return <React.Fragment>No data</React.Fragment>
+        return <Fragment>
+            No data
+        </Fragment>
 
     let step = settings.step
 
@@ -239,7 +241,7 @@ export default function ({ projectId, projectVersion }: Options) {
                                 <Checkbox
                                     size="small"
                                     checked={settings.speech}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings({ ...settings, speech: e.target.checked })}
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) => setSettings({ ...settings, speech: e.target.checked })}
                                 />
                             }
                             label="speech"
@@ -261,19 +263,19 @@ export default function ({ projectId, projectVersion }: Options) {
                             <FirstPage />
                         </Button>
                         <Button
-                            onClick={() => goToStep(step == 0 ? state.nails.length - 1 : step - 1)}>
+                            onClick={() => goToStep(step == 0 ? state.steps.length - 1 : step - 1)}>
                             <ChevronLeft />
                         </Button>
                         <Button disabled sx={{ width: '100px' }}>
-                            {step + 1} / {state.nails.length}
+                            {step + 1} / {state.steps.length-1}
                         </Button>
                         <Button
-                            onClick={() => goToStep(step == state.nails.length - 1 ? 0 : step + 1)}>
+                            onClick={() => goToStep(step == state.steps.length - 2 ? 0 : step + 1)}>
                             <ChevronRight />
                         </Button>
                         <Button>
                             <LastPage
-                                onClick={() => goToStep(state.nails.length - 1)} />
+                                onClick={() => goToStep(state.steps.length - 2)} />
                         </Button>
                     </ButtonGroup>
                 </Grid>
@@ -281,7 +283,7 @@ export default function ({ projectId, projectVersion }: Options) {
                 <Grid item xs={3}>
                     <Rating
                         size="small"
-                        value={state.rating}
+                        value={state.rating ?? 0}
                         precision={0.5}
                         onChange={(e, newValue) => handleRate(newValue ?? undefined)}>
                     </Rating>

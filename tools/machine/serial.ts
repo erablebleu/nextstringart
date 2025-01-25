@@ -12,13 +12,16 @@ export class SerialMachine {
     private _port?: SerialPort
     private _incommingData: string = ''
     private _jobQueue: Array<MachineJob> = []
-
     private _status: MachineStatus = MachineStatus.Disconnected
     private _currentJob?: MachineJob
     private _referential?: MachineReferential
 
     public getCurrentJob = () => this._currentJob
     public getSettings = () => this._settings
+
+    constructor() {
+        console.log('[SerialMachine].constructor')
+    }
 
     private onData(data: any) {
         this._incommingData += data.toString('ascii')
@@ -125,7 +128,7 @@ export class SerialMachine {
             || this._currentJob
             || this._jobQueue.length <= 0)
             return
-        
+
         const job: MachineJob = this._jobQueue[0]
         this._jobQueue.splice(0, 1)
         this._currentJob = job
@@ -178,7 +181,7 @@ export class SerialMachine {
         }
 
         const getMove = (value?: number | 'home') => {
-            if(value === 'home') 
+            if (value === 'home')
                 return
 
             return value
@@ -211,7 +214,7 @@ export class SerialMachine {
             strHome += ' Z'
             this._referential!.homeTZ()
         }
-        if(strHome != '') {
+        if (strHome != '') {
             result.push('G28' + strHome)
         }
 

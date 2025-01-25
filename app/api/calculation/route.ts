@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
-import { withMiddleware, calculator } from "@/tools/api"
-import { CalculationJob, CalculationJobInfo } from "@/tools/calculation"
+import { withMiddleware } from "@/tools/api"
+import { calculator } from "@/global"
+import { CalculationJob, CalculationJobInfo } from "@/tools/calculation/calculationJob"
 
 // READ ALL
 export const GET = withMiddleware(async () => {

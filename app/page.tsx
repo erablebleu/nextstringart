@@ -1,13 +1,12 @@
 'use client'
 
-import FrameList from "@/components/frameList";
-import ProjectList from "@/components/projectList";
-import { Frame, FrameHelper, Project } from "@/model";
-import { fetchAndThrow } from "@/tools/fetch";
-import { InsertDriveFile } from "@mui/icons-material";
-import { Box, Button, ButtonGroup } from "@mui/material";
-import { useRouter } from "next/navigation";
-import React from "react";
+import FrameList from "@/components/frameList"
+import ProjectList from "@/components/projectList"
+import { Frame, FrameHelper, Project } from "@/model"
+import { fetchAndThrow } from "@/tools/fetch"
+import { InsertDriveFile } from "@mui/icons-material"
+import { Box, Button, ButtonGroup } from "@mui/material"
+import { useRouter } from "next/navigation"
 
 export default function () {
     const router = useRouter()

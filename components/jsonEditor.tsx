@@ -4,9 +4,9 @@ import { Action } from "@/app/action"
 import { fetchAndThrow } from "@/tools/fetch"
 import { Editor } from "@monaco-editor/react"
 import { Save } from "@mui/icons-material"
-import { Box, Button, ButtonGroup, Grid } from "@mui/material"
+import { Box, Button, ButtonGroup } from "@mui/material"
 import { enqueueSnackbar } from "notistack"
-import React from "react"
+import { ReactNode, useEffect, useState } from "react"
 
 export type JsonEditorParameters = {
     url: string
@@ -14,11 +14,11 @@ export type JsonEditorParameters = {
     saveMethod?: string
     value?: string
     onValueChanged?: (value: string) => void
-    children?: React.ReactNode
+    children?: ReactNode
 }
 
 export default function ({ children, url, saveUrl, saveMethod, value, onValueChanged }: JsonEditorParameters) {
-    const [state, setState] = React.useState({
+    const [state, setState] = useState({
         isLoaded: false,
         value: value ?? '',
         initialValue: value ?? '',
@@ -26,7 +26,7 @@ export default function ({ children, url, saveUrl, saveMethod, value, onValueCha
     })
 
     if (!value) {
-        React.useEffect(() => {
+        useEffect(() => {
             Action.try(async () => {
                 const result = await fetchAndThrow(url, { method: 'GET' })
                 const data = await result.json()

@@ -1,13 +1,14 @@
 'use client'
 
 import { Action } from "@/app/action"
-import { useInterval, useLocalStorage } from "@/hooks"
+import { useLocalStorage } from "@/hooks"
 import { fetchAndThrow } from "@/tools/fetch"
-import { MachineInfo, MachineJobStatus, MachineStatus } from "@/tools/machine/machineInfo"
+import { MachineJobStatus, MachineStatus } from "@/tools/machine/machineInfo"
 import { Add, CropSquare, Home, Pause, PlayArrow, Remove } from "@mui/icons-material"
-import { Box, Button, ButtonGroup, Grid, MenuItem, Select, Stack, Typography } from "@mui/material"
+import { Button, ButtonGroup, MenuItem, Select, Stack, Typography } from "@mui/material"
 import { enqueueSnackbar } from "notistack"
-import React from "react"
+import { Fragment } from "react"
+import useSWR from "swr"
 
 const Axis = {
     tx: {
@@ -23,22 +24,15 @@ const Axis = {
     },
 }
 
+const fetcher = (url: URL) => fetch(url, { method: 'GET' }).then(r => r.json())
+
 export default function () {
-    const [state, setState] = React.useState<MachineInfo | undefined>()
+    const { data, isLoading } = useSWR(`/api/machine/info`, fetcher, { refreshInterval: 1000, dedupingInterval: 1000, })
     const [step, setStep] = useLocalStorage('machine.control.step', {
         tx: 1,
         tz: 1,
         rz: 1,
     })
-
-    useInterval(async () => {
-        try {
-            const response = await fetchAndThrow('/api/machine/info', { method: 'Get' })
-            const data = await response.json()
-            setState(data)
-        }
-        catch { }
-    }, 1000)
 
     async function handleMove(axis: string, value: number | 'home') {
         const body = JSON.stringify({
@@ -77,10 +71,10 @@ export default function () {
         })
     }
 
-    if (!state) {
-        return <React.Fragment>
+    if (isLoading) {
+        return <Fragment>
             Loading
-        </React.Fragment>
+        </Fragment>
     }
 
     return (
@@ -88,22 +82,22 @@ export default function () {
 
             <ButtonGroup>
                 <Button
-                    disabled={state.status != MachineStatus.Disconnected}
+                    disabled={data.status != MachineStatus.Disconnected}
                     onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/connect', { method: 'POST' }))}>Connect</Button>
                 <Button
-                    disabled={state.status == MachineStatus.Disconnected}
+                    disabled={data.status == MachineStatus.Disconnected}
                     onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/disconnect', { method: 'POST' }))} >Disconnect</Button>
             </ButtonGroup>
 
             <Stack direction='row'>
-                <ButtonGroup disabled={!state.job}>
+                <ButtonGroup disabled={!data.job}>
                     <Button
-                        disabled={state.job?.status == MachineJobStatus.Running}
+                        disabled={data.job?.status == MachineJobStatus.Running}
                         onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/job/startorresume', { method: 'POST' }))}>
                         <PlayArrow />
                     </Button>
                     <Button
-                        disabled={state.job?.status == MachineJobStatus.Finished || state.job?.status == MachineJobStatus.Paused}
+                        disabled={data.job?.status == MachineJobStatus.Finished || data.job?.status == MachineJobStatus.Paused}
                         onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/job/pause', { method: 'POST' }))}>
                         <Pause />
                     </Button>
@@ -112,8 +106,8 @@ export default function () {
                         <CropSquare />
                     </Button>
                 </ButtonGroup>
-                {state.job && <Typography margin={1}>
-                    {state.job.name}: {MachineJobStatus[state.job.status]} {state.job.commandIndex} / {state.job.commandCount}
+                {data.job && <Typography margin={1}>
+                    {data.job.name}: {MachineJobStatus[data.job.status]} {data.job.commandIndex} / {data.job.commandCount}
                 </Typography>}
             </Stack>
 
@@ -151,7 +145,7 @@ export default function () {
 
                         <Typography
                             alignContent='center'>
-                            {axis}: {(Axis[axis].format?.(state[axis]) ?? state[axis]).toFixed(2)}
+                            {axis}: {(Axis[axis].format?.(data[axis]) ?? data[axis]).toFixed(2)}
                         </Typography>
                     </Stack>
                 ))}

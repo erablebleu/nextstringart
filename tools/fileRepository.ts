@@ -11,6 +11,8 @@ export class FileRepository<T> {
         this.directory = directory
         this.fileName = fileName
 
+        console.log('[FileRepository].constructor: ' + fileName)
+
         fs.mkdirSync(this.directory, { recursive: true })
     }
 

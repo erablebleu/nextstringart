@@ -1,13 +1,12 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { Frame } from "@/model"
-import { frameRepository, withMiddleware } from "@/tools/api"
-
-const repository = frameRepository
+import { withMiddleware } from "@/tools/api"
+import { frameRepository } from "@/global"
 
 // READ ALL
 export const GET = withMiddleware(async () => {
-    const result = await repository.readAll()
+    const result = await frameRepository.readAll()
 
     return NextResponse.json(result)
 })
@@ -15,7 +14,7 @@ export const GET = withMiddleware(async () => {
 // CREATE
 export const POST = withMiddleware(async (req: NextRequest) => {
     const data: Frame = await req.json()
-    const result = await repository.create(data)
+    const result = await frameRepository.create(data)
 
     return NextResponse.json(result)
 })

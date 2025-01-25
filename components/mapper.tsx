@@ -1,13 +1,13 @@
 'use client'
 
 import { Button, ButtonGroup, Grid, MenuItem, Select, Stack, Typography } from "@mui/material"
-import React from "react"
 import { Action } from "@/app/action"
 import { fetchAndThrow } from "@/tools/fetch"
 import { ChevronLeft, ChevronRight, FirstPage, LastPage, Save } from "@mui/icons-material"
 import { enqueueSnackbar } from "notistack"
 import { Frame, NailMap, NailMapHelper, Nail, Entity, ProjectSettings } from "@/model"
 import { useRouter } from "next/navigation"
+import { Fragment, useEffect, useState } from "react"
 
 type Options = {
     projectId: string
@@ -25,17 +25,17 @@ const SVG_MARGIN = 60
 
 export default function ({ projectId, projectVersion }: Options) {
     const router = useRouter()
-    const [isDragging, setIsDragging] = React.useState(false)
-    const [index, setIndex] = React.useState(0)
+    const [isDragging, setIsDragging] = useState(false)
+    const [index, setIndex] = useState(0)
 
-    const [state, setState] = React.useState<{
+    const [state, setState] = useState<{
         projectSettings: ProjectSettings
         frames: Array<Frame & Entity>
         nailMap: NailMap
         svgInfo: SVGInfo
     } | undefined>()
 
-    React.useEffect(() => {
+    useEffect(() => {
         Action.try(async () => {
             const resProject = await fetchAndThrow(`/api/project/${projectId}/${projectVersion}/settings`, { method: 'GET' })
             const projectSettings: ProjectSettings = await resProject.json()
@@ -131,7 +131,9 @@ export default function ({ projectId, projectVersion }: Options) {
     }
 
     if (!state)
-        return <React.Fragment>Loading ...</React.Fragment>
+        return <Fragment>
+            Loading ...
+        </Fragment>
 
     return (
         <Grid

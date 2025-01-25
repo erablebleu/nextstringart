@@ -1,12 +1,12 @@
 'use client'
 
 import { Action } from "@/app/action";
-import { CalculationJobInfo } from "@/tools/calculation";
+import { CalculationJobInfo } from "@/tools/calculation/calculationJob";
 import { fetchAndThrow } from "@/tools/fetch";
 import { Cancel } from "@mui/icons-material";
 import { Button, ButtonGroup, LinearProgress, List, ListItem, ListItemButton, ListItemText, Stack } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
-import React from "react";
+import { Fragment } from "react";
 import useSWR from "swr";
 
 type Parameters = {
@@ -34,15 +34,18 @@ export default function ({ projectId, selectedId, onSelected }: Parameters) {
     }
 
     if (isLoading || !data)
-        return <React.Fragment>Loading ...</React.Fragment>
+        return <Fragment>
+            Loading ...
+        </Fragment>
 
     return (
-        <List 
-        sx={{ 
-            height: '100%',
-         flexGrow: 1, 
-         overflow: 'auto' }}>
-            {!isLoading && data.sort((a: CalculationJobInfo, b: CalculationJobInfo) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()).map((item: CalculationJobInfo) => (
+        <List
+            sx={{
+                height: '100%',
+                flexGrow: 1,
+                overflow: 'auto'
+            }}>
+            {!isLoading && data.sort((a: CalculationJobInfo, b: CalculationJobInfo) => new Date(b.startedAt!).getTime() - new Date(a.startedAt!).getTime()).map((item: CalculationJobInfo) => (
                 <ListItem key={item.id} disablePadding>
                     <ListItemButton selected={selectedId == item.id}
                         onClick={() => handleSelect(item)}>

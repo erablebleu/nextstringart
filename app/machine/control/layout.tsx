@@ -1,16 +1,16 @@
 'use client'
 
 import { Box, Stack, Tab, Tabs } from "@mui/material";
-import React from "react";
+import { ReactNode, SyntheticEvent } from "react";
 import MachineControl from "@/components/machineControl";
 import { usePathname, useRouter } from "next/navigation";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
     const router = useRouter()
     const pathname = usePathname()
     const tab = pathname.split('/').at(-1)
 
-    async function handleTabChange(event: React.SyntheticEvent, tab: string) {
+    async function handleTabChange(event: SyntheticEvent, tab: string) {
         router.push(`/machine/control/${tab}`)
     }
 

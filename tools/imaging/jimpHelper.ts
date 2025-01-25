@@ -2,7 +2,7 @@ import { ColorOptions, LuminosityOptions, Thread } from "@/model"
 import { Jimp } from "jimp"
 
 export namespace JimpHelper {
-    export async function getImageData(thread: Thread): Promise<Uint8Array<ArrayBuffer>> {
+    export async function getImageData(thread: Thread): Promise<Uint8Array> {
         const image = await Jimp.read(thread.imageInfo.imageData)
 
         JimpHelper.applyOptions(image, thread.colorOptions, thread.luminosityOptions)

@@ -1,12 +1,14 @@
-import { Action } from '@/app/action';
-import { fetchAndThrow } from '@/tools/fetch';
-import { enqueueSnackbar } from 'notistack';
-import React from 'react';
+'use client'
+
+import { Action } from '@/app/action'
+import { fetchAndThrow } from '@/tools/fetch'
+import { enqueueSnackbar } from 'notistack'
+import { useEffect, useState } from 'react'
 
 export function useAppBar<T>(url: string | URL | globalThis.Request, init?: RequestInit): [T | undefined, React.Dispatch<React.SetStateAction<T | undefined>>] {
-    const [value, setValue] = React.useState<T>()
+    const [value, setValue] = useState<T>()
 
-    React.useEffect(() => {
+    useEffect(() => {
         Action.try(async () => {
             const result = await fetchAndThrow(url, { method: 'GET' })
             const data = await result.json()

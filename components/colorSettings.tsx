@@ -1,6 +1,8 @@
+'use client'
+
 import { ColorOptions } from "@/model";
 import { Card, CardContent, CardHeader, Checkbox, FormControlLabel, Stack } from "@mui/material";
-import React from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import NumericInput from "./numericInput";
 
 interface Options {
@@ -9,9 +11,9 @@ interface Options {
 }
 
 export default function ({ colorOptions, onChange }: Options) {
-    const [state, setState] = React.useState(colorOptions)
+    const [state, setState] = useState(colorOptions)
 
-    React.useEffect(() => {
+    useEffect(() => {
         setState(colorOptions)
     }, [colorOptions])
 
@@ -21,7 +23,7 @@ export default function ({ colorOptions, onChange }: Options) {
     }
 
     return (
-        <React.Fragment>
+        <Fragment>
             <Card>
                 <CardHeader
                     title="Color settings"
@@ -51,6 +53,6 @@ export default function ({ colorOptions, onChange }: Options) {
                     </CardContent>
                 }
             </Card>
-        </React.Fragment>
+        </Fragment>
     )
 }

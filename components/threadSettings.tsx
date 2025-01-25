@@ -1,13 +1,15 @@
-import { ColorOptions, ImageInfo, LuminosityOptions, Thread } from "@/model";
-import React from "react";
-import { Button, Card, CardContent, CardHeader, Grid, Stack, TextField } from "@mui/material";
-import { Delete } from "@mui/icons-material";
-import ImageSelector from "./imageSelector";
-import ColorSettings from "./colorSettings";
-import LuminositySettings from "./luminositySettings";
-import ImagePreview from "./imagePreview";
-import NumericInput from "./numericInput";
-import ColorPicker from "./colorPicker";
+'use client'
+
+import { ColorOptions, ImageInfo, LuminosityOptions, Thread } from "@/model"
+import { Button, Card, CardContent, CardHeader, Grid, Stack, TextField } from "@mui/material"
+import { Delete } from "@mui/icons-material"
+import ImageSelector from "./imageSelector"
+import ColorSettings from "./colorSettings"
+import LuminositySettings from "./luminositySettings"
+import ImagePreview from "./imagePreview"
+import NumericInput from "./numericInput"
+import ColorPicker from "./colorPicker"
+import { ChangeEvent, Fragment, useEffect, useState } from "react"
 
 interface Options {
     data: Thread
@@ -16,9 +18,9 @@ interface Options {
 }
 
 export default function ({ data, onChange, onDelete }: Options) {
-    const [state, setState] = React.useState(data)
+    const [state, setState] = useState(data)
 
-    React.useEffect(() => {
+    useEffect(() => {
         setState(data)
     }, [data])
 
@@ -35,7 +37,7 @@ export default function ({ data, onChange, onDelete }: Options) {
     }
 
     return (
-        <React.Fragment>
+        <Fragment>
             <Grid container>
                 <Grid item xs={3}>
                     <ImageSelector
@@ -64,7 +66,7 @@ export default function ({ data, onChange, onDelete }: Options) {
                                         label="Description"
                                         variant="standard"
                                         value={state.description}
-                                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleChange(event.target.value, "description")} />
+                                        onChange={(event: ChangeEvent<HTMLInputElement>) => handleChange(event.target.value, "description")} />
                                     <NumericInput
                                         value={state.maxStep}
                                         label="Max Step"
@@ -99,6 +101,6 @@ export default function ({ data, onChange, onDelete }: Options) {
                     />
                 </Grid>
             </Grid>
-        </React.Fragment>
+        </Fragment>
     )
 }

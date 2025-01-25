@@ -1,7 +1,8 @@
-import { Box } from "@mui/material";
-import zIndex from "@mui/material/styles/zIndex";
-import React from "react";
-import { SketchPicker } from 'react-color';
+'use client'
+
+import { Box } from "@mui/material"
+import { Fragment, useState } from "react"
+import { SketchPicker } from 'react-color'
 
 interface Options {
     value: string
@@ -9,7 +10,7 @@ interface Options {
 }
 
 export default function ({ value, onChange }: Options) {
-    const [state, setState] = React.useState({ displayColorPicker: false })
+    const [state, setState] = useState({ displayColorPicker: false })
 
     const handleClick = () => {
         setState({
@@ -28,7 +29,7 @@ export default function ({ value, onChange }: Options) {
     };
 
     return (
-        <React.Fragment>
+        <Fragment>
             <Box sx={{ display: 'inline-block', cursor: 'pointer' }}>
                 <Box onClick={handleClick}
                     sx={{ width: '30px', height: '30px', background: value, borderRadius: '2px' }} />
@@ -45,7 +46,6 @@ export default function ({ value, onChange }: Options) {
                         onChange={handleChange} />
                 </Box>
             }
-        </React.Fragment>
-
+        </Fragment>
     )
 }

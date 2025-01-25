@@ -1,9 +1,12 @@
 import { Entity, Instructions, Project, ProjectSettings } from "@/model"
-import { projectRepository } from "../api"
+import { projectRepository } from "@/global"
 import { CalculationJob, CalculationJobStatus } from "./calculationJob"
 
 export class Calculator {
     private readonly _jobs: Array<CalculationJob> = []
+    constructor() {
+        console.log('[Calculator].constructor')
+    }
 
     public getJobs = () => this._jobs
 
@@ -38,7 +41,10 @@ export class Calculator {
         }
     }
 
-    public getJob(jobId: string): CalculationJob | undefined {
-        return this._jobs.find((x: CalculationJob) => x.id == jobId)
+    public getJob({ jobId, projectId, projectVersion }: { jobId?: string, projectId?: string, projectVersion?: string }): CalculationJob | undefined {
+        if (jobId)
+            return this._jobs.find((x: CalculationJob) => x.id == jobId)
+        else
+            return this._jobs.find((x: CalculationJob) => x.projectId == projectId && x.projectVersion == projectVersion)
     }
 }

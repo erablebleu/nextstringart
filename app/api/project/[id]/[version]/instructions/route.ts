@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
-import { withMiddleware, projectRepository } from "@/tools/api"
+import { withMiddleware } from "@/tools/api"
 import { IdParameters } from "@/app/parameters"
 import { Instructions } from "@/model"
+import { projectRepository } from "@/global"
 
 export type Parameters = IdParameters & {
     version: string

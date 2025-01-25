@@ -1,7 +1,9 @@
-import { ColorOptions, LuminosityOptions } from "@/model";
-import { JimpHelper } from "@/tools/imaging/jimpHelper";
-import { Jimp } from "jimp";
-import React from "react";
+'use client'
+
+import { ColorOptions, LuminosityOptions } from "@/model"
+import { JimpHelper } from "@/tools/imaging/jimpHelper"
+import { Jimp } from "jimp"
+import { Fragment, useEffect, useRef, useState } from "react"
 
 interface Options {
     imageData: string
@@ -10,8 +12,8 @@ interface Options {
 }
 
 export default function ({ imageData, colorOptions, luminosityOptions }: Options) {
-    const canvas = React.useRef<HTMLCanvasElement>(null)
-    const [state, setState] = React.useState(imageData)
+    const canvas = useRef<HTMLCanvasElement>(null)
+    const [state, setState] = useState(imageData)
 
     async function updateImageImage() {
         const image = await Jimp.read(imageData)
@@ -21,13 +23,13 @@ export default function ({ imageData, colorOptions, luminosityOptions }: Options
         setState(await image.getBase64('image/png'))
     }
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (typeof window === 'undefined') return
         updateImageImage()
     }, [imageData, colorOptions, luminosityOptions])
 
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (typeof window === 'undefined') 
             return
 
@@ -50,13 +52,13 @@ export default function ({ imageData, colorOptions, luminosityOptions }: Options
     }, [state])
 
     return (
-        <React.Fragment>
+        <Fragment>
             <canvas ref={canvas} style={{
                 margin: 2,
                 width: "100%"
                 // display: "block",
                 // maxHeight: `${height}px`
             }} />
-        </React.Fragment>
+        </Fragment>
     )
 }

@@ -1,6 +1,8 @@
-import React from "react";
-import ImagePreview from "./imagePreview";
-import { ImageInfo } from "@/model";
+'use client'
+
+import { Fragment } from "react"
+import ImagePreview from "./imagePreview"
+import { ImageInfo } from "@/model"
 
 interface IOptions {
     imageData?: string
@@ -27,9 +29,9 @@ export default function ({ imageData, onChange }: IOptions) {
     }
 
     return (
-        <React.Fragment>
+        <Fragment>
             {imageData && <ImagePreview imageData={imageData} />}
             <input type="file" accept=".png,.bmp,.jpg,.jpeg" onChange={(e) => readFile(e)} />
-        </React.Fragment>
+        </Fragment>
     )
 }

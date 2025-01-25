@@ -1,6 +1,6 @@
-import { TextField } from "@mui/material";
-import React from "react";
-import { NumericFormat, NumericFormatProps } from "react-number-format";
+import { TextField } from "@mui/material"
+import { ChangeEvent, forwardRef } from "react"
+import { NumericFormat, NumericFormatProps } from "react-number-format"
 
 interface Options {
     value: number
@@ -15,7 +15,7 @@ interface CustomProps {
     name: string;
 }
 
-const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
+const NumericFormatCustom = forwardRef<NumericFormatProps, CustomProps>(
     function NumericFormatCustom(props, ref) {
         const { onChange, ...other } = props;
         return (
@@ -38,7 +38,7 @@ const NumericFormatCustom = React.forwardRef<NumericFormatProps, CustomProps>(
 
 export default function ({ value, onChange, label, disabled, propertyName }: Options) {
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         onChange?.(Number.parseFloat(event.target.value), propertyName)
     };
 

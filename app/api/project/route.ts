@@ -1,7 +1,8 @@
 
 import { NextRequest, NextResponse } from "next/server"
-import { projectRepository, withMiddleware } from "@/tools/api"
+import { withMiddleware } from "@/tools/api"
 import { Project, ProjectHelper } from "@/model"
+import { projectRepository } from "@/global"
 
 // READ ALL
 export const GET = withMiddleware(async () => {

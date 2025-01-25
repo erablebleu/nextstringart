@@ -1,12 +1,12 @@
 'use client'
 
-import { Action } from "@/app/action";
-import { Entity, Project } from "@/model";
-import { fetchAndThrow } from "@/tools/fetch";
-import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
-import { useRouter } from "next/navigation";
-import React from "react";
-import useSWR from "swr";
+import { Action } from "@/app/action"
+import { Entity, Project } from "@/model"
+import { fetchAndThrow } from "@/tools/fetch"
+import { List, ListItem, ListItemButton, ListItemText } from "@mui/material"
+import { useRouter } from "next/navigation"
+import { Fragment } from "react"
+import useSWR from "swr"
 
 export const getFetcher = async (url: URL) => (await Action.try(async () => await fetchAndThrow(url, { method: 'GET' })))?.json()
 
@@ -19,7 +19,9 @@ export default function () {
     }
 
     if (isLoading || !data)
-        return <React.Fragment>Loading ...</React.Fragment>
+        return <Fragment>
+            Loading ...
+        </Fragment>
 
     return (
         <List sx={{ flexGrow: 1, overflow: 'auto' }}>

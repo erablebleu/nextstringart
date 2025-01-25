@@ -1,8 +1,9 @@
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"
 import { File } from "@/tools/file.back"
-import { withMiddleware, SettingsFilePath } from "@/tools/api"
-import { MachineSettings } from "@/tools/machine/settings";
+import { withMiddleware } from "@/tools/api"
+import { MachineSettings } from "@/tools/machine/settings"
+import { SettingsFilePath } from "@/global"
 
 // READ
 export const GET = withMiddleware(async (req: NextRequest) => {

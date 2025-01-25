@@ -1,7 +1,9 @@
-import { LuminosityOptions } from "@/model";
-import { Card, CardContent, CardHeader, Checkbox, Grid, Slider } from "@mui/material";
-import React from "react";
-import NumericInput from "./numericInput";
+'use client'
+
+import { LuminosityOptions } from "@/model"
+import { Card, CardContent, CardHeader, Checkbox, Grid, Slider } from "@mui/material"
+import NumericInput from "./numericInput"
+import { Fragment, useEffect, useState } from "react"
 
 interface Options {
     luminosityOptions: LuminosityOptions
@@ -9,9 +11,9 @@ interface Options {
 }
 
 export default function ({ luminosityOptions, onChange }: Options) {
-    const [state, setState] = React.useState(luminosityOptions)
+    const [state, setState] = useState(luminosityOptions)
 
-    React.useEffect(() => {
+    useEffect(() => {
         setState(luminosityOptions)
     }, [luminosityOptions])
 
@@ -28,7 +30,7 @@ export default function ({ luminosityOptions, onChange }: Options) {
     }
 
     return (
-        <React.Fragment>
+        <Fragment>
             <Card>
                 <CardHeader
                     title="Luminosity settings"
@@ -83,6 +85,6 @@ export default function ({ luminosityOptions, onChange }: Options) {
                 }
             </Card>
 
-        </React.Fragment>
+        </Fragment>
     )
 }

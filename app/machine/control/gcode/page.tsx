@@ -1,12 +1,11 @@
 'use client'
 
-import { Box, Button, ButtonGroup } from "@mui/material";
-import React from "react";
-import { Editor } from "@monaco-editor/react";
-import { useLocalStorage } from "@/hooks";
-import { Send } from "@mui/icons-material";
-import { fetchAndThrow } from "@/tools/fetch";
-import { enqueueSnackbar } from "notistack";
+import { Box, Button, ButtonGroup } from "@mui/material"
+import { Editor } from "@monaco-editor/react"
+import { useLocalStorage } from "@/hooks"
+import { Send } from "@mui/icons-material"
+import { fetchAndThrow } from "@/tools/fetch"
+import { enqueueSnackbar } from "notistack"
 
 export default function () {
     const [gcode, setGCode] = useLocalStorage('machine.control.gcode', `G28 Z

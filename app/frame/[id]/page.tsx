@@ -1,17 +1,17 @@
 'use client'
 
-import React from "react";
+import { Fragment } from "react";
 import { IdParameters } from "@/app/parameters";
 import JsonEditor from "@/components/jsonEditor";
-import { Button, ButtonGroup } from "@mui/material";
+import { Button } from "@mui/material";
 import { Delete } from "@mui/icons-material";
 import { fetchAndThrow } from "@/tools/fetch";
 import { enqueueSnackbar } from "notistack";
 import { Action } from "@/app/action";
 import { useRouter } from "next/navigation";
 
-export default function ({ params }: { params: IdParameters }) {
-    const id = params.id
+export default async function ({ params }: { params: Promise<IdParameters> }) {
+    const id = (await params).id
     const router = useRouter()
 
     async function handleDelete() {
@@ -28,7 +28,7 @@ export default function ({ params }: { params: IdParameters }) {
     }
 
     return (
-        <React.Fragment>
+        <Fragment>
             {id && <JsonEditor
                 url={`/api/frame/${id}`}
             >
@@ -39,6 +39,6 @@ export default function ({ params }: { params: IdParameters }) {
                     Delete Frame
                 </Button>
             </JsonEditor>}
-        </React.Fragment>
+        </Fragment>
     )
 }
