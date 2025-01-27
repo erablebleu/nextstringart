@@ -2,11 +2,10 @@
 
 import { Fragment } from "react"
 import ImagePreview from "./imagePreview"
-import { ImageInfo } from "@/model"
 
 interface IOptions {
     imageData?: string
-    onChange?: (v: ImageInfo) => void
+    onChange?: (v: string) => void
 }
 
 export default function ({ imageData, onChange }: IOptions) {
@@ -19,11 +18,7 @@ export default function ({ imageData, onChange }: IOptions) {
             const image = new Image()
             image.src = data
             await image.decode()
-            onChange?.({
-                imageData: data,
-                width: image.width,
-                height: image.height,
-            })
+            onChange?.(data)
         }
         reader.readAsDataURL(e.target.files[0])
     }

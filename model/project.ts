@@ -24,18 +24,12 @@ export type ProjectVersionInfo = {
     rating?: number,
 }
 
-export type ImageInfo = {
-    imageData: string
-    width: number
-    height: number
-}
-
 export type Thread = {
     color: string
     previewThickness: number
     maxStep: number
     calculationThickness: number
-    imageInfo: ImageInfo
+    imageData: string
     colorOptions: ColorOptions
     luminosityOptions: LuminosityOptions
     description?: string
@@ -77,11 +71,7 @@ export namespace ProjectHelper {
             previewThickness: 0.1,
             maxStep: 4000,
             calculationThickness: 0.1,
-            imageInfo: {
-                imageData: '',
-                width: 0,
-                height: 0,
-            },
+            imageData: '',
             colorOptions: defaultColorOptions(),
             luminosityOptions: defaultLuminosityOptions(),
             description: "Black thread",

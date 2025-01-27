@@ -1,4 +1,5 @@
 import { Instructions, NailMap, Project, ProjectSettings } from "@/model"
+import { ImageInfo } from "@/tools/imaging/jimpHelper"
 
 export type CalculationWorkerInfo = {
     threadIndex: number
@@ -16,5 +17,5 @@ export type CalculationWorkerStartData = {
     project: Project
     projectSettings: ProjectSettings
     nailMap: NailMap
-    imageDatas: Array<Uint8Array>,
+    imageDatas: Array<ImageInfo>,
 }

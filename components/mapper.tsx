@@ -214,7 +214,7 @@ export default function ({ projectId, projectVersion }: Options) {
                         {state.projectSettings.threads.length > 0 &&
                             <image
                                 onDragStart={e => e.preventDefault()}
-                                xlinkHref={`data:image/png;${state.projectSettings.threads[0].imageInfo.imageData}`} />}
+                                xlinkHref={`data:image/png;${state.projectSettings.threads[0].imageData}`} />}
                     </g>
                     <g>
                         {state.nailMap.lines.length > 0 && state.nailMap.lines[index].map((value: number, idx: number) => (

@@ -3,6 +3,7 @@ import { Line, LineHelper, Point } from "@/tools/geometry"
 import { parentPort } from "worker_threads"
 import { CalculationWokerMessage, CalculationWorkerInfo, CalculationWorkerStartData } from "./calculationWorker"
 import { PixelLineEvaluation, PixelLineHelper, PixelLineMode, WeightPoint } from "../pixelLine"
+import { ImageInfo } from "@/tools/imaging/jimpHelper"
 
 type LineInfo = Line & {
     n0Idx: number
@@ -86,7 +87,8 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
 
     for (info.threadIndex = 0; info.threadIndex < project.threads.length; info.threadIndex++) {
         const thread: Thread = project.threads[info.threadIndex]
-        const imageData: Uint8Array = imageDatas[info.threadIndex]
+        const imageInfo: ImageInfo = imageDatas[info.threadIndex]
+        const imageData: Uint8Array = imageInfo.data
         info.stepCount = thread.maxStep
         info.stepIndex = 0
 
@@ -98,9 +100,9 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
                     .map((y: number) => {
                         const ix = Math.floor(minX! + x)
                         const iy = Math.floor(minY! + y)
-                        if (ix < 0 || ix >= thread.imageInfo.width) return 0
-                        if (iy < 0 || iy >= thread.imageInfo.height) return 0
-                        const idx: number = 4 * (iy * thread.imageInfo.width + ix)
+                        if (ix < 0 || ix >= imageInfo.width) return 0
+                        if (iy < 0 || iy >= imageInfo.height) return 0
+                        const idx: number = 4 * (iy * imageInfo.width + ix)
                         return 1 - (imageData[idx] + imageData[idx + 1] + imageData[idx + 2]) / 3 / 255
                     }))
         const data: number[][] = target.map((l: number[]) => l.map((v: number) => { return 0 }))

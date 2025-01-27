@@ -1,6 +1,6 @@
 'use client'
 
-import { ColorOptions, ImageInfo, LuminosityOptions, Thread } from "@/model"
+import { ColorOptions, LuminosityOptions, Thread } from "@/model"
 import { Button, Card, CardContent, CardHeader, Grid, Stack, TextField } from "@mui/material"
 import { Delete } from "@mui/icons-material"
 import ImageSelector from "./imageSelector"
@@ -41,10 +41,10 @@ export default function ({ data, onChange, onDelete }: Options) {
             <Grid container>
                 <Grid item xs={3}>
                     <ImageSelector
-                        imageData={data.imageInfo.imageData}
-                        onChange={(newValue: ImageInfo) => setNewValue({
+                        imageData={data.imageData}
+                        onChange={(newValue: string) => setNewValue({
                             ...state,
-                            imageInfo: newValue
+                            imageData: newValue,
                         })} />
                 </Grid>
                 <Grid item xs={6}>
@@ -97,7 +97,7 @@ export default function ({ data, onChange, onDelete }: Options) {
                 </Grid>
                 <Grid item xs={3}>
                     <ImagePreview
-                        imageData={state.imageInfo.imageData}
+                        imageData={state.imageData}
                         colorOptions={state.colorOptions}
                         luminosityOptions={state.luminosityOptions}
                     />

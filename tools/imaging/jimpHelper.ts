@@ -1,13 +1,23 @@
 import { ColorOptions, LuminosityOptions, Thread } from "@/model"
 import { Jimp } from "jimp"
 
+export type ImageInfo = {
+    data: Uint8Array
+    width: number
+    height: number
+}
+
 export namespace JimpHelper {
-    export async function getImageData(thread: Thread): Promise<Uint8Array> {
-        const image = await Jimp.read(thread.imageInfo.imageData)
+    export async function getImageData(thread: Thread): Promise<ImageInfo> {
+        const image = await Jimp.read(thread.imageData)
 
         JimpHelper.applyOptions(image, thread.colorOptions, thread.luminosityOptions)
 
-        return Uint8Array.from(image.bitmap.data) // data rgba
+        return {
+            data: Uint8Array.from(image.bitmap.data), // data rgba
+            width: image.bitmap.width,
+            height: image.bitmap.height,
+        }
     }
 
     export function applyOptions(image: Awaited<ReturnType<typeof Jimp.read>>, colorOptions?: ColorOptions, luminosityOptions?: LuminosityOptions) {

@@ -19,7 +19,7 @@ async function run() {
 
     const thread: Thread = projectSettings.threads[0]
 
-    const image = await Jimp.read(thread.imageInfo.imageData)
+    const image = await Jimp.read(thread.imageData)
 
     console.log(thread.colorOptions)
     console.log(thread.luminosityOptions)

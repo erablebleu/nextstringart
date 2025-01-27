@@ -4,7 +4,7 @@ import { PromiseWithResolvers } from "../promiseWithResolver"
 import { CalculationWokerMessage, CalculationWorkerInfo } from "./workers/calculationWorker"
 import { CalculationHelper } from "./workers/calculationHelper"
 import { Worker } from "worker_threads"
-import { JimpHelper } from "../imaging/jimpHelper"
+import { ImageInfo, JimpHelper } from "../imaging/jimpHelper"
 import { frameRepository } from "@/global"
 
 export enum CalculationJobStatus {
@@ -136,7 +136,7 @@ export class CalculationJob {
 
             const frame: Frame = await frameRepository.read(this._projectSettings.frameId)
             const nailMap: NailMap = NailMapHelper.get(frame)
-            const imageDatas: Array<Uint8Array> = await Promise.all(this._projectSettings.threads
+            const imageDatas: Array<ImageInfo> = await Promise.all(this._projectSettings.threads
                 .map((thread: Thread) => JimpHelper.getImageData(thread)))
 
             this._worker.postMessage({
