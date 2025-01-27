@@ -1,7 +1,7 @@
 'use client'
 
 import { ColorOptions, LuminosityOptions, Thread } from "@/model"
-import { Button, Card, CardContent, CardHeader, Grid, Stack, TextField } from "@mui/material"
+import { Box, Button, Card, CardContent, CardHeader, Grid, Stack, TextField } from "@mui/material"
 import { Delete } from "@mui/icons-material"
 import ImageSelector from "./imageSelector"
 import ColorSettings from "./colorSettings"
@@ -48,39 +48,46 @@ export default function ({ data, onChange, onDelete }: Options) {
                         })} />
                 </Grid>
                 <Grid item xs={6}>
-                    <Stack spacing={2}>
-                        <Card>
-                            <CardHeader title="Settings" />
-                            <CardContent>
-                                <Stack>
-                                    <Button color="error" onClick={() => onDelete?.(state)}>
-                                        <Delete />
-                                    </Button>
-                                    <ColorPicker
-                                        value={state.color}
-                                        onChange={(color) => setNewValue({
-                                            ...state,
-                                            color: color
-                                        })} />
-                                    <TextField
-                                        label="Description"
-                                        variant="standard"
-                                        value={state.description}
-                                        onChange={(event: ChangeEvent<HTMLInputElement>) => handleChange(event.target.value, "description")} />
-                                    <NumericInput
-                                        value={state.maxStep}
-                                        label="Max Step"
-                                        onChange={v => handleChange(v, 'maxStep')}
-                                        type='integer'
-                                        min={1}
-                                    />
-                                    <NumericInput
-                                        value={state.calculationThickness}
-                                        label="thickness"
-                                        onChange={v => handleChange(v, 'calculationThickness')}
-                                    /></Stack>
-                            </CardContent>
-                        </Card>
+                    <Stack spacing={1} margin={1}>
+                        <Stack
+                            display='flex'
+                            flexDirection='row'
+                            direction='row'
+                            spacing={1}>
+                            <Box
+                                alignContent='center'>
+                                <ColorPicker
+                                    value={state.color}
+                                    onChange={(color) => setNewValue({
+                                        ...state,
+                                        color: color
+                                    })} />
+                            </Box>
+                            <TextField
+                                sx={{
+                                    flexGrow: 1
+                                }}
+                                label="Description"
+                                size="small"
+                                variant="outlined"
+                                value={state.description}
+                                onChange={(event: ChangeEvent<HTMLInputElement>) => handleChange(event.target.value, "description")} />
+                            <Button color="error" onClick={() => onDelete?.(state)}>
+                                <Delete />
+                            </Button>
+                        </Stack>
+                        <NumericInput
+                            value={state.maxStep}
+                            label="Max Step"
+                            onChange={v => handleChange(v, 'maxStep')}
+                            type='integer'
+                            min={1}
+                        />
+                        <NumericInput
+                            value={state.calculationThickness}
+                            label="thickness"
+                            onChange={v => handleChange(v, 'calculationThickness')}
+                        />
                         <ColorSettings
                             colorOptions={data.colorOptions}
                             onChange={(newValue: ColorOptions) => setNewValue({

@@ -53,6 +53,7 @@ export default function ({ luminosityOptions, onChange }: Options) {
                                     onChange={v => handleChange(v, "brightness")}
                                     min={0}
                                     max={3}
+                                    hideButtons
                                 />
                             </Grid>
                             <Grid item xs={8}>
@@ -72,6 +73,7 @@ export default function ({ luminosityOptions, onChange }: Options) {
                                     onChange={v => handleChange(v, "contrast")}
                                     min={-1}
                                     max={1}
+                                    hideButtons
                                 />
                             </Grid>
                             <Grid item xs={8} >
