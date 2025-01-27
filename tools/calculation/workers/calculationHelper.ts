@@ -4,7 +4,6 @@ import { CalculationWorkerInfo } from "./calculationWorker"
 
 export namespace CalculationHelper {
     export function getWorker(projectSettings: ProjectSettings): Worker {
-        console.log(projectSettings.calculationMethod)
         switch (projectSettings.calculationMethod) {
             case CalculationMethod.delta: return new Worker(/* webpackChunkName: "calculation.worker" */ new URL('./deltaCalculation.worker.ts', import.meta.url))
             case CalculationMethod.mri: return new Worker(/* webpackChunkName: "mriCalculation.worker" */ new URL('./mriCalculation.worker.ts', import.meta.url))

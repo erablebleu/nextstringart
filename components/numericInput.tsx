@@ -1,56 +1,81 @@
-import { TextField } from "@mui/material"
+import { SxProps, TextField, Theme } from "@mui/material"
 import { ChangeEvent, forwardRef } from "react"
-import { NumericFormat, NumericFormatProps } from "react-number-format"
 
 interface Options {
     value: number
     label?: string
     disabled?: boolean
-    propertyName?: string
-    onChange: (newValue: number, propertyName: string | undefined) => void
+    min?: number
+    max?: number
+    onChange: (newValue: number) => void
+    type?: 'integer' | 'float'
+    hideButtons?: boolean
+    sx?: SxProps<Theme>
+    slotProps?: any
 }
 
-interface CustomProps {
-    onChange: (event: { target: { name: string; value: string } }) => void;
-    name: string;
-}
-
-const NumericFormatCustom = forwardRef<NumericFormatProps, CustomProps>(
-    function NumericFormatCustom(props, ref) {
-        const { onChange, ...other } = props;
-        return (
-            <NumericFormat
-                {...other}
-                getInputRef={ref}
-                onValueChange={(values) => {
-                    onChange({
-                        target: {
-                            name: props.name,
-                            value: values.value,
-                        },
-                    });
-                }}
-                valueIsNumericString
-            />
-        );
-    },
-);
-
-export default function ({ value, onChange, label, disabled, propertyName }: Options) {
+export default function ({ value, onChange, label, disabled, min, max, type, hideButtons, sx, slotProps }: Options) {
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        onChange?.(Number.parseFloat(event.target.value), propertyName)
+        const string = event.target.value
+
+        if (!string)
+            return
+
+        let result: number
+
+        switch (type) {
+
+            case 'integer':
+                result = Number.parseInt(string)
+                break
+
+            case undefined:
+            case 'float':
+            default:
+                result = Number.parseFloat(string)
+                break
+        }
+
+        if (min !== undefined && result < min)
+            result = min
+
+        if (max !== undefined && result > max)
+            result = max
+
+        console.log({
+            string,
+            min, max, result
+        })
+        onChange?.(result)
     };
 
     return (
         <TextField
+            size="small"
             value={value}
             onChange={handleChange}
             label={label}
-            name={label}
             disabled={disabled}
-            id="formatted-numberformat-offset"
-            InputProps={{ inputComponent: NumericFormatCustom as any }}
-            variant="standard" />
+            type="number"
+            slotProps={{
+                ...slotProps,
+                inputLabel: {
+                    shrink: true,
+                },
+            }}
+            variant="outlined"
+            sx={{
+                ...sx,
+                ...hideButtons && {
+                    '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+                        display: 'none'
+                    },
+                    '& input[type=number]': {
+                        MozAppearance: 'textfield'
+                    },
+                }
+            }}
+        />
     )
 }

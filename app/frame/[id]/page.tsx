@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment } from "react";
+import { Fragment, use } from "react";
 import { IdParameters } from "@/app/parameters";
 import JsonEditor from "@/components/jsonEditor";
 import { Button } from "@mui/material";
@@ -10,8 +10,8 @@ import { enqueueSnackbar } from "notistack";
 import { Action } from "@/app/action";
 import { useRouter } from "next/navigation";
 
-export default async function ({ params }: { params: Promise<IdParameters> }) {
-    const id = (await params).id
+export default function ({ params }: { params: Promise<IdParameters> }) {
+    const id = use(params).id
     const router = useRouter()
 
     async function handleDelete() {

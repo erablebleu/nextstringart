@@ -6,7 +6,7 @@ import { Jimp } from "jimp"
 import { Fragment, useEffect, useRef, useState } from "react"
 
 interface Options {
-    imageData: string
+    imageData?: string
     colorOptions?: ColorOptions
     luminosityOptions?: LuminosityOptions
 }
@@ -16,6 +16,11 @@ export default function ({ imageData, colorOptions, luminosityOptions }: Options
     const [state, setState] = useState(imageData)
 
     async function updateImageImage() {
+        if (!imageData || imageData == '') {
+            setState(undefined)
+            return
+        }
+
         const image = await Jimp.read(imageData)
 
         JimpHelper.applyOptions(image, colorOptions, luminosityOptions)
@@ -30,11 +35,11 @@ export default function ({ imageData, colorOptions, luminosityOptions }: Options
 
 
     useEffect(() => {
-        if (typeof window === 'undefined') 
+        if (typeof window === 'undefined')
             return
 
         const image = new Image()
-        image.src = state
+        image.src = state ?? '/profile.png'
         image.onload = () => {
             if (!canvas.current)
                 return

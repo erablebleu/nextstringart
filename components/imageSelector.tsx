@@ -30,7 +30,7 @@ export default function ({ imageData, onChange }: IOptions) {
 
     return (
         <Fragment>
-            {imageData && <ImagePreview imageData={imageData} />}
+            <ImagePreview imageData={imageData} />
             <input type="file" accept=".png,.bmp,.jpg,.jpeg" onChange={(e) => readFile(e)} />
         </Fragment>
     )

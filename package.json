@@ -24,7 +24,6 @@
     "react": "^19.0.0",
     "react-color": "^2.19.3",
     "react-dom": "^19.0.0",
-    "react-number-format": "^5.4.3",
     "serialport": "^13.0.0",
     "swr": "^2.3.0"
   },

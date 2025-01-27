@@ -4,7 +4,7 @@ import { Action } from "@/app/action"
 import { Entity, Frame } from "@/model"
 import { fetchAndThrow } from "@/tools/fetch"
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Fragment } from "react"
 import useSWR from "swr"
 
@@ -12,11 +12,6 @@ export const getFetcher = async (url: URL) => (await Action.try(async () => awai
 
 export default function () {
     const { data, isLoading } = useSWR(`/api/frame`, getFetcher, {})
-    const router = useRouter()
-
-    async function handleSelect(item: Frame & Entity) {
-        router.push(`/frame/${item.id}`)
-    }
 
     if (isLoading || !data)
         return <Fragment>
@@ -27,8 +22,9 @@ export default function () {
         <List sx={{ flexGrow: 1, overflow: 'auto' }}>
             {!isLoading && data.sort((a, b) => a.name.localeCompare(b.name)).map((item: Frame & Entity) => (
                 <ListItem key={item.id} disablePadding>
-                    <ListItemButton
-                        onClick={() => handleSelect(item)}>
+                    <ListItemButton                        
+                        href={`/frame/${item.id}`}
+                        LinkComponent={Link}>
                         <ListItemText primary={item.name ?? item.id} secondary={item.description} />
                     </ListItemButton>
                 </ListItem>

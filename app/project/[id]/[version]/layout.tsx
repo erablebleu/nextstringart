@@ -1,14 +1,17 @@
 'use client'
 
-import { Fragment, ReactNode, SyntheticEvent, use } from "react"
+import { Fragment, ReactNode, use } from "react"
 import { usePathname, useRouter } from "next/navigation";
 import { IdParameters } from "@/app/parameters";
-import { Box, Button, ButtonGroup, Tab, Tabs } from "@mui/material";
+import { Box, Button, ButtonGroup, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { Delete } from "@mui/icons-material";
 import { Action } from "@/app/action";
 import { fetchAndThrow } from "@/tools/fetch";
 import { enqueueSnackbar } from "notistack";
 import { App } from "@/contexts/appContext";
+import { useData } from "@/hooks";
+import { Project } from "@/model";
+import Link from "next/link";
 
 export type Parameters = IdParameters & {
     version: string
@@ -16,16 +19,13 @@ export type Parameters = IdParameters & {
 
 export default function ({ children, params }: { children: ReactNode, params: Promise<Parameters> }) {
     const { id: projectId, version: projectVersion } = use(params)
+    const [project] = useData<Project>(`/api/project/${projectId}`, { method: 'GET' })
     const router = useRouter()
     const pathname = usePathname()
     let tab = pathname.split('/').at(-1)
 
     if (!tab || !['raw', 'settings', 'map', 'result'].includes(tab))
         tab = 'raw'
-
-    async function handleTabChange(event: SyntheticEvent, tab: string) {
-        router.push(`/project/${projectId}/${projectVersion}/${tab}`)
-    }
 
     async function handleDelete() {
         try {
@@ -42,15 +42,28 @@ export default function ({ children, params }: { children: ReactNode, params: Pr
 
     App.useAppBar(
         <Fragment>
-            <Box
-                flexGrow={1}>
-                <Tabs value={tab} onChange={handleTabChange}>
-                    <Tab value="raw" label="Raw" />
-                    <Tab value="settings" label="Settings" />
-                    <Tab value="map" label="Map" />
-                    <Tab value="result" label="Result" />
+            <Stack>
+                <Tabs value={tab}>
+                    <Tab value="raw" label="Raw" href={`/project/${projectId}/${projectVersion}/raw`} LinkComponent={Link} />
+                    <Tab value="settings" label="Settings" href={`/project/${projectId}/${projectVersion}/settings`} LinkComponent={Link} />
+                    <Tab value="map" label="Map" href={`/project/${projectId}/${projectVersion}/map`} LinkComponent={Link} />
+                    <Tab value="result" label="Result" href={`/project/${projectId}/${projectVersion}/result`} LinkComponent={Link} />
                 </Tabs>
-            </Box>
+            </Stack>
+            <Stack
+                direction='row'
+                spacing={1}
+                flexGrow={1}
+                alignContent='center'
+                justifyContent='center'
+            >
+                <Typography
+                    color="grey"
+                    textTransform='uppercase'
+                >
+                    project: {project?.name}
+                </Typography>
+            </Stack>
             <Box>
                 <ButtonGroup>
                     <Button
@@ -61,7 +74,7 @@ export default function ({ children, params }: { children: ReactNode, params: Pr
                     </Button>
                 </ButtonGroup>
             </Box>
-        </Fragment>, [projectId, projectVersion, tab])
+        </Fragment>, [project, projectId, projectVersion, tab])
 
     return (
         <Box

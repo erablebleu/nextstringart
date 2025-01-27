@@ -1,13 +1,13 @@
 'use client'
 
-import { Button, ButtonGroup, Grid, MenuItem, Select, Stack, Typography } from "@mui/material"
+import { Button, ButtonGroup, Grid, Stack, Typography } from "@mui/material"
 import { Action } from "@/app/action"
 import { fetchAndThrow } from "@/tools/fetch"
 import { ChevronLeft, ChevronRight, FirstPage, LastPage, Save } from "@mui/icons-material"
 import { enqueueSnackbar } from "notistack"
 import { Frame, NailMap, NailMapHelper, Nail, Entity, ProjectSettings } from "@/model"
-import { useRouter } from "next/navigation"
 import { Fragment, useEffect, useState } from "react"
+import NumericInput from "./numericInput"
 
 type Options = {
     projectId: string
@@ -24,7 +24,6 @@ type SVGInfo = {
 const SVG_MARGIN = 60
 
 export default function ({ projectId, projectVersion }: Options) {
-    const router = useRouter()
     const [isDragging, setIsDragging] = useState(false)
     const [index, setIndex] = useState(0)
 
@@ -37,10 +36,10 @@ export default function ({ projectId, projectVersion }: Options) {
 
     useEffect(() => {
         Action.try(async () => {
-            const resProject = await fetchAndThrow(`/api/project/${projectId}/${projectVersion}/settings`, { method: 'GET' })
-            const projectSettings: ProjectSettings = await resProject.json()
-            const resFrames = await fetchAndThrow(`/api/frame`, { method: 'GET' })
-            const frames: Array<Frame & Entity> = await resFrames.json()
+            const projectPromise = fetchAndThrow(`/api/project/${projectId}/${projectVersion}/settings`, { method: 'GET' })
+            const framePromise = fetchAndThrow(`/api/frame`, { method: 'GET' })
+            const projectSettings: ProjectSettings = await (await projectPromise).json()
+            const frames: Array<Frame & Entity> = await (await framePromise).json()
             const frame: Frame & Entity = frames.find((x: Frame & Entity) => x.id == projectSettings.frameId) ?? frames[0]
             const nailMap: NailMap = NailMapHelper.get(frame)
 
@@ -95,26 +94,6 @@ export default function ({ projectId, projectVersion }: Options) {
         })
     }
 
-    async function handleFrameChange(frameId: string) {
-        if (!state)
-            return
-
-        const frame: Frame & Entity = state.frames.find((x: Frame & Entity) => x.id == frameId) ?? state.frames[0]
-        const nailMap: NailMap = NailMapHelper.get(frame)
-
-        setState({
-            ...state!,
-            projectSettings: {
-                ...state!.projectSettings,
-                frameId,
-            },
-            nailMap,
-            svgInfo: getSvgInfo(nailMap),
-        })
-        setIndex(0)
-        setIsDragging(false)
-    }
-
     async function handleSave() {
         try {
             await fetchAndThrow(`/api/project/${projectId}`, {
@@ -153,23 +132,13 @@ export default function ({ projectId, projectVersion }: Options) {
                 <Grid
                     item
                     xs={2}>
-                    <ButtonGroup
-                        size="small">
+                    <ButtonGroup>
                         <Button
                             color="success"
                             onClick={handleSave}
                             endIcon={<Save />}>
                             Save
                         </Button>
-                        <Select
-                            size="small"
-                            value={state.projectSettings.frameId}
-                            onChange={(e) => handleFrameChange(e.target.value as string)}
-                        >
-                            {state.frames.map((x: Frame & Entity) => (
-                                <MenuItem key={x.id} value={x.id}>{x.name}</MenuItem>
-                            ))}
-                        </Select>
                     </ButtonGroup>
 
                 </Grid>
@@ -180,7 +149,9 @@ export default function ({ projectId, projectVersion }: Options) {
                     direction='column'
                     alignItems="center"
                     justifyContent='center' >
-                    <ButtonGroup>
+                    <ButtonGroup
+                        size="small"
+                    >
                         <Button
                             onClick={() => setIndex(0)}>
                             <FirstPage />
@@ -189,8 +160,19 @@ export default function ({ projectId, projectVersion }: Options) {
                             onClick={() => setIndex(index == 0 ? state.nailMap.nails.length - 1 : index - 1)}>
                             <ChevronLeft />
                         </Button>
-                        <Button disabled sx={{ width: '100px' }}>
-                            {index} / {state.nailMap.nails.length}
+                        <NumericInput
+                            value={index}
+                            onChange={(v: number) => setIndex(v)}
+                            min={0}
+                            max={state.nailMap.nails.length - 1}
+                            type='integer'
+                            hideButtons
+                            sx={{
+                                width: '80px',
+                            }}
+                        />
+                        <Button disabled sx={{ width: '60px' }}>
+                            / {state.nailMap.nails.length}
                         </Button>
                         <Button
                             onClick={() => setIndex(index == state.nailMap.nails.length - 1 ? 0 : index + 1)}>
@@ -235,9 +217,9 @@ export default function ({ projectId, projectVersion }: Options) {
                                 xlinkHref={`data:image/png;${state.projectSettings.threads[0].imageInfo.imageData}`} />}
                     </g>
                     <g>
-                        {state.nailMap.lines.length > 0 && state.nailMap.lines[index].map((value: number) => (
+                        {state.nailMap.lines.length > 0 && state.nailMap.lines[index].map((value: number, idx: number) => (
                             <line
-                                key={crypto.randomUUID()}
+                                key={`line_${idx}`}
                                 x1={state.nailMap.nails[index].position.x}
                                 y1={state.nailMap.nails[index].position.y}
                                 x2={state.nailMap.nails[value].position.x}
@@ -247,9 +229,9 @@ export default function ({ projectId, projectVersion }: Options) {
                         ))}
                     </g>
                     <g>
-                        {state.nailMap.nails.map((n: Nail, index: number) => (
+                        {state.nailMap.nails.map((n: Nail, idx: number) => (
                             <ellipse
-                                key={`nail_${index}`}
+                                key={`nail_${idx}`}
                                 cx={n.position.x}
                                 cy={n.position.y}
                                 rx={n.diameter / 2}

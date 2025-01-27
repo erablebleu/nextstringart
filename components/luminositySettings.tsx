@@ -45,12 +45,15 @@ export default function ({ luminosityOptions, onChange }: Options) {
                 </CardHeader>
                 {state.isEnabled &&
                     <CardContent>
-                        <Grid container sx={{alignItems: "flex-end"}}>
+                        <Grid container sx={{ alignItems: "flex-end" }}>
                             <Grid item xs={4}>
-                                <NumericInput label="Brightness"
+                                <NumericInput
+                                    label="Brightness"
                                     value={state.brightness}
-                                    onChange={handleChange}
-                                    propertyName="brightness" />
+                                    onChange={v => handleChange(v, "brightness")}
+                                    min={0}
+                                    max={3}
+                                />
                             </Grid>
                             <Grid item xs={8}>
                                 <Slider min={0} max={3} value={state.brightness}
@@ -66,8 +69,10 @@ export default function ({ luminosityOptions, onChange }: Options) {
                             <Grid item xs={4}>
                                 <NumericInput label="Contrast"
                                     value={state.contrast}
-                                    onChange={handleChange}
-                                    propertyName="contrast" />
+                                    onChange={v => handleChange(v, "contrast")}
+                                    min={-1}
+                                    max={1}
+                                />
                             </Grid>
                             <Grid item xs={8} >
                                 <Slider min={-1} max={1} value={state.contrast}

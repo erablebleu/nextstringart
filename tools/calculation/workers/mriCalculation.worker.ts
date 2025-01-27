@@ -173,7 +173,7 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
 
             if (j % 5693 == 0) {
                 log(`j:${j} => heat:${heatmap[j]}`)
-                log(points)
+                // log(points)
             }
         }
 
@@ -184,7 +184,7 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         for (let j = 0; j < heatmap.length; j++)
             heatmap[j] = heatmap[j] / hMax
 
-        log(heatmap)
+        // log(heatmap)
         log(`target[${target.length}][${target[0].length}]`)
 
         const linesWeights: WeightLine[] = lines.map((l: LineInfo) => {
@@ -203,7 +203,7 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         const steps: Array<LineInfo> = []
 
         log(`thread "${thread.description}" search path`)
-        log(linesWeights)
+        // log(linesWeights)
         var start = new Date()
 
         let nextLine: WeightLine | undefined

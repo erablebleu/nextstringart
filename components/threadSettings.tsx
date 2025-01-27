@@ -55,7 +55,7 @@ export default function ({ data, onChange, onDelete }: Options) {
                                 <Stack>
                                     <Button color="error" onClick={() => onDelete?.(state)}>
                                         <Delete />
-                                    </Button>                                    
+                                    </Button>
                                     <ColorPicker
                                         value={state.color}
                                         onChange={(color) => setNewValue({
@@ -70,13 +70,15 @@ export default function ({ data, onChange, onDelete }: Options) {
                                     <NumericInput
                                         value={state.maxStep}
                                         label="Max Step"
-                                        propertyName="maxStep"
-                                        onChange={handleChange} />
+                                        onChange={v => handleChange(v, 'maxStep')}
+                                        type='integer'
+                                        min={1}
+                                    />
                                     <NumericInput
                                         value={state.calculationThickness}
                                         label="thickness"
-                                        propertyName="calculationThickness"
-                                        onChange={handleChange} /></Stack>
+                                        onChange={v => handleChange(v, 'calculationThickness')}
+                                    /></Stack>
                             </CardContent>
                         </Card>
                         <ColorSettings

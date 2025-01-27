@@ -103,7 +103,7 @@ export namespace ProjectHelper {
         return {
             isEnabled: false,
             brightness: 1,// [0; 2]
-            contrast: 1, // [0; 2]
+            contrast: 0, // [0; 2]
         }
     }
 }

@@ -8,7 +8,7 @@ import { Await } from '@/tools/await';
 import { Step, Frame, RotationDirection, NailMapHelper, FrameShape, PolygonFrame } from '@/model';
 
 const outDirectory = join(__dirname, 'out')
-const stdin = process.openStdin()
+const stdin = process.stdin
 
 run()
 

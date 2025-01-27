@@ -3,12 +3,13 @@ import { JimpHelper } from "@/tools/imaging/jimpHelper"
 import { Jimp } from "jimp"
 import { join } from "node:path"
 import { projectRepository } from "@/global"
+import { File } from "@/tools/file.back"
 
 const outDirectory = join(__dirname, 'out')
 
 run()
 
-async function run() {
+async function run() { 
     const projectId = '0b0bed28-e497-4590-a02d-5d5385257696'
     const projectVersion = '20250124134500000'
     const project: Project = await projectRepository.read(projectId)

@@ -45,8 +45,8 @@ export default function Home() {
             <Button onClick={refresh} >
                 <Refresh />
             </Button>
-            {lines.map((points: Array<WeightPoint>) => (
-                <svg key={`line_${crypto.randomUUID()}`} viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`} preserveAspectRatio="xMidYMid" height={400} width='100%'>
+            {lines.map((points: Array<WeightPoint>, index: number) => (
+                <svg key={`line_${index}`} viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`} preserveAspectRatio="xMidYMid" height={400} width='100%'>
                     {range(minX, maxX - minX).map((x: number) => (<line
                         key={`line_x_${x}`}
                         stroke="red"

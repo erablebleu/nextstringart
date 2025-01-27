@@ -18,9 +18,10 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import dynamic from 'next/dynamic';
 import { Architecture, Article, Home, PrecisionManufacturing } from '@mui/icons-material';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { AppContext } from '@/contexts/appContext';
 import { useContext, useState } from 'react';
+import Link from 'next/link';
 
 const drawerWidth = 240
 
@@ -84,6 +85,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 function MainLayout({ children }) {
     const theme = useTheme()
     const [open, setOpen] = useState(false)
+    const router = useRouter()
     const pathname = usePathname()
     const appContext = useContext(AppContext)
 
@@ -112,6 +114,11 @@ function MainLayout({ children }) {
                         sx={{ mr: 2, ...(open && { display: 'none' }) }}
                     >
                         <MenuIcon />
+                    </IconButton>
+                    <IconButton
+                        LinkComponent={Link}
+                        href='/'>
+                        <Home />
                     </IconButton>
                     <Box
                         display='flex'
@@ -143,8 +150,11 @@ function MainLayout({ children }) {
                 <Divider />
                 <List>
                     {Menu.map(item => (
-                        <ListItem key={item.href} disablePadding>
+                        <ListItem
+                            key={item.href}
+                            disablePadding>
                             <ListItemButton
+                                LinkComponent={Link}
                                 href={item.href}
                                 selected={isSelected(item)}>
                                 <ListItemIcon>

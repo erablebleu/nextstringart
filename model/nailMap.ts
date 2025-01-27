@@ -48,9 +48,10 @@ export namespace NailMapHelper {
         const totalCount: number = polygon.nailCount
         const edgeNailCount: number = Math.floor(polygon.nailCount / polygon.edgeCount)
         const center = { x: 0, y: 0 }
+        const a0 = Math.PI
 
         for (let i = 0; i < polygon.edgeCount; i++) {
-            const t0: number = 2 * Math.PI * i / polygon.edgeCount
+            const t0: number = a0 + 2 * Math.PI * i / polygon.edgeCount
             const t1: number = t0 + 2 * Math.PI / polygon.edgeCount
             const p0: Point = { x: center.x + radius * Math.sin(t0), y: center.y + radius * Math.cos(t0) }
             const p1: Point = { x: center.x + radius * Math.sin(t1), y: center.y + radius * Math.cos(t1) }

@@ -3,10 +3,10 @@
 import { IdParameters } from "@/app/parameters"
 import ThreadSettings from "@/components/threadSettings"
 import { useData } from "@/hooks"
-import { CalculationMethod, ProjectHelper, ProjectSettings, Thread } from "@/model"
+import { CalculationMethod, Entity, Frame, ProjectHelper, ProjectSettings, Thread } from "@/model"
 import { fetchAndThrow } from "@/tools/fetch"
 import { ExpandMore, Save } from "@mui/icons-material"
-import { Accordion, AccordionDetails, AccordionSummary, Button, ButtonGroup, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from "@mui/material"
+import { Accordion, AccordionDetails, AccordionSummary, Button, ButtonGroup, FormControl, InputLabel, ListItemText, MenuItem, Select, Stack, Typography } from "@mui/material"
 import { enqueueSnackbar } from "notistack"
 import { Fragment, use } from "react"
 
@@ -17,6 +17,7 @@ export type Parameters = IdParameters & {
 export default function ({ params }: { params: Promise<Parameters> }) {
     const { id: projectId, version: projectVersion } = use(params)
     const [projectSettings, setProjectSettings] = useData<ProjectSettings>(`/api/project/${projectId}/${projectVersion}/settings`)
+    const [frames] = useData<Array<Frame & Entity>>(`/api/frame`)
 
     async function handleSave() {
         try {
@@ -40,7 +41,18 @@ export default function ({ params }: { params: Promise<Parameters> }) {
         })
     }
 
-    if (!projectSettings)
+    async function handleFrameChange(frameId: string) {
+        console.log('handleFrameChange')
+        if (!projectSettings)
+            return
+
+        setProjectSettings({
+            ...projectSettings,
+            frameId: frameId
+        })
+    }
+
+    if (!projectSettings || !frames)
         return <Fragment>
             Loading ...
         </Fragment>
@@ -90,24 +102,51 @@ export default function ({ params }: { params: Promise<Parameters> }) {
                         <Typography variant="h5">Global</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
-                        <FormControl fullWidth>
-                            <InputLabel
-                                id="calculation-method-label">
-                                Calculation method
-                            </InputLabel>
-                            <Select
-                                labelId="calculation-method-label"
-                                label="Calculation method"
-                                size="small"
-                                value={projectSettings.calculationMethod}
-                                onChange={(e) => handleCalculationMethodChanged(e.target.value as CalculationMethod)}>
-                                {[CalculationMethod.delta, CalculationMethod.mri].map((item: CalculationMethod) =>
-                                    <MenuItem key={item} value={item}>{item}
-                                    </MenuItem>)}
-                            </Select>
-                        </FormControl>
+                        <Stack
+                            spacing={2}>
+
+                            <FormControl fullWidth>
+                                <InputLabel
+                                    id="calculation-method-label">
+                                    Calculation method
+                                </InputLabel>
+                                <Select
+                                    labelId="calculation-method-label"
+                                    label="Calculation method"
+                                    size="small"
+                                    value={projectSettings.calculationMethod}
+                                    onChange={(e) => handleCalculationMethodChanged(e.target.value as CalculationMethod)}>
+                                    {[CalculationMethod.delta, CalculationMethod.mri].map((item: CalculationMethod) =>
+                                        <MenuItem key={item} value={item}>{item}
+                                        </MenuItem>)}
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth>
+                                <InputLabel
+                                    id="frame-label">
+                                    Frame
+                                </InputLabel>
+                                <Select
+                                    labelId="frame-label"
+                                    label="Frame"
+                                    size="small"
+                                    value={projectSettings.frameId}
+                                    onChange={(e) => handleFrameChange(e.target.value as string)}
+                                >
+                                    {frames?.map((x: Frame & Entity) => (
+                                        <MenuItem key={x.id} value={x.id}>
+                                            <ListItemText
+                                                primary={x.name}
+                                                secondary={x.description} />
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Stack>
                     </AccordionDetails>
                 </Accordion>
+
 
                 {projectSettings.threads.map((thread: Thread, index: number) => (
                     <Accordion

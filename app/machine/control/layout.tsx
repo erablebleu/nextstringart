@@ -8,7 +8,10 @@ import { usePathname, useRouter } from "next/navigation";
 export default function RootLayout({ children }: { children: ReactNode }) {
     const router = useRouter()
     const pathname = usePathname()
-    const tab = pathname.split('/').at(-1)
+    let tab = pathname.split('/').at(-1)
+
+    if (!tab || !['settings', 'json', 'gcode'].includes(tab))
+        tab = 'settings'
 
     async function handleTabChange(event: SyntheticEvent, tab: string) {
         router.push(`/machine/control/${tab}`)
