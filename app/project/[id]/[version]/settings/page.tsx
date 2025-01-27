@@ -1,6 +1,7 @@
 'use client'
 
 import { IdParameters } from "@/app/parameters"
+import Mapper from "@/components/mapper"
 import ThreadSettings from "@/components/threadSettings"
 import { useData } from "@/hooks"
 import { CalculationMethod, Entity, Frame, ProjectHelper, ProjectSettings, Thread } from "@/model"
@@ -8,7 +9,7 @@ import { fetchAndThrow } from "@/tools/fetch"
 import { ExpandMore, Save } from "@mui/icons-material"
 import { Accordion, AccordionDetails, AccordionSummary, Button, ButtonGroup, FormControl, InputLabel, ListItemText, MenuItem, Select, Stack, Typography } from "@mui/material"
 import { enqueueSnackbar } from "notistack"
-import { Fragment, use } from "react"
+import { Fragment, use, useEffect, useState } from "react"
 
 export type Parameters = IdParameters & {
     version: string
@@ -18,6 +19,7 @@ export default function ({ params }: { params: Promise<Parameters> }) {
     const { id: projectId, version: projectVersion } = use(params)
     const [projectSettings, setProjectSettings] = useData<ProjectSettings>(`/api/project/${projectId}/${projectVersion}/settings`)
     const [frames] = useData<Array<Frame & Entity>>(`/api/frame`)
+    const [frame, setFrame] = useState<Frame & Entity | undefined>()
 
     async function handleSave() {
         try {
@@ -41,8 +43,11 @@ export default function ({ params }: { params: Promise<Parameters> }) {
         })
     }
 
+    useEffect(() => {
+        setFrame(frames?.find(x => x.id == projectSettings?.frameId))
+    }, [projectSettings, frame])
+
     async function handleFrameChange(frameId: string) {
-        console.log('handleFrameChange')
         if (!projectSettings)
             return
 
@@ -147,7 +152,6 @@ export default function ({ params }: { params: Promise<Parameters> }) {
                     </AccordionDetails>
                 </Accordion>
 
-
                 {projectSettings.threads.map((thread: Thread, index: number) => (
                     <Accordion
                         key={`thread_${index}`}
@@ -175,6 +179,19 @@ export default function ({ params }: { params: Promise<Parameters> }) {
                                     ...projectSettings,
                                     threads: projectSettings.threads.filter(t => t != thread)
                                 })} />
+                            {frame &&
+                                <Mapper
+                                    frame={frame}
+                                    thread={thread}
+                                    onTransformationChange={imageTransformation => setProjectSettings({
+                                        ...projectSettings,
+                                        threads: projectSettings.threads.map(t => t == thread ? {
+                                            ...thread,
+                                            imageTransformation
+                                        } : t)
+                                    })}>
+                                </Mapper>
+                            }
                         </AccordionDetails>
                     </Accordion>
                 ))}

@@ -45,67 +45,6 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
     let startTime: DOMHighResTimeStamp,
         endTime: DOMHighResTimeStamp
 
-    let minX: number = 99999999,
-        maxX: number = -99999999,
-        minY: number = 99999999,
-        maxY: number = -99999999
-
-    const updateMinMax = (p: Point) => {
-        minX = Math.min(minX, p.x)
-        maxX = Math.max(maxX, p.x)
-        minY = Math.min(minY, p.y)
-        maxY = Math.max(maxY, p.y)
-    }
-
-    const getLineInfo = (n0Idx: number, r0: RotationDirection, n1Idx: number, r1: RotationDirection): LineInfo => {
-        const line: Line = LineHelper.getTangeant(nails[n0Idx].position, nails[n0Idx].diameter, r0, nails[n1Idx].position, nails[n1Idx].diameter, r1)
-        updateMinMax(line.p0)
-        updateMinMax(line.p1)
-        return { ...line, n0Idx, r0, n1Idx, r1 }
-    }
-
-    log(`calculate tangeant lines`)
-    const lines: LineInfo[] = nailMap.lines.map((lines: number[], n0Idx: number) =>
-        lines.map((n1Idx: number) => [
-            getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.ClockWise),
-            // getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.AntiClockWise)
-        ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), [])
-            .concat(
-                lines.map((n1Idx: number) => [
-                    // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.ClockWise),
-                    // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.AntiClockWise)
-                ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), []))
-    ).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), [])
-
-    const center = {
-        x: (maxX + minX) / 2,
-        y: (maxY + minY) / 2,
-    } // center
-    const radius = Math.max(maxX - center.x, maxY - center.y, center.x - minX, center.y - minY) // radius
-
-    log(center)
-    log(radius)
-
-    // nailMap ref to picture ref
-    minX = (minX! - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale
-    maxX = (maxX! - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale
-    minY = (minY! - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale
-    maxY = (maxY! - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale
-
-    log(`calculate pixel lines`)
-
-    for (let d of [
-        { p0: { x: 1.1, y: -1.1 }, p1: { x: 1, y: 1 } },
-        { p0: { x: 1.1, y: 0.1 }, p1: { x: 0, y: 1 } },
-        { p0: { x: -1.1, y: 1.1 }, p1: { x: 1, y: 1 } },
-        { p0: { x: 0.1, y: 1.1 }, p1: { x: -1, y: 0 } },
-        { p0: { x: -1.1, y: -1.1 }, p1: { x: -1, y: 1 } },
-        { p0: { x: -1.1, y: 0.1 }, p1: { x: 0, y: -1 } },
-        { p0: { x: -1.1, y: -1.1 }, p1: { x: 1, y: -1 } },
-        { p0: { x: 0.1, y: -1.1 }, p1: { x: 1, y: 0 } },
-    ])
-        log(`x0:${d.p0.x} y0:${d.p0.y} x1:${d.p1.x} y1:${d.p1.y} ${JSON.stringify(radon(d.p0, d.p1))}`)
-
     var result: Array<Step> = []
 
     startTime = performance.now()
@@ -116,6 +55,61 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         const imageData: Uint8Array = imageInfo.data
         info.stepCount = thread.maxStep
         info.stepIndex = 0
+
+        let minX: number = 99999999,
+            maxX: number = -99999999,
+            minY: number = 99999999,
+            maxY: number = -99999999
+
+        function getX(x: number): number {
+            return (x! - thread.imageTransformation.position.x) / thread.imageTransformation.scale
+        }
+
+        function getY(y: number): number {
+            return (y! - thread.imageTransformation.position.y) / thread.imageTransformation.scale
+        }
+
+        function updateMinMax(p: Point) {
+            minX = Math.min(minX, p.x)
+            maxX = Math.max(maxX, p.x)
+            minY = Math.min(minY, p.y)
+            maxY = Math.max(maxY, p.y)
+        }
+
+        function getLineInfo(n0Idx: number, r0: RotationDirection, n1Idx: number, r1: RotationDirection): LineInfo {
+            const line: Line = LineHelper.getTangeant(nails[n0Idx].position, nails[n0Idx].diameter, r0, nails[n1Idx].position, nails[n1Idx].diameter, r1)
+            updateMinMax(line.p0)
+            updateMinMax(line.p1)
+            return { ...line, n0Idx, r0, n1Idx, r1 }
+        }
+
+        log(`calculate tangeant lines`)
+        const lines: LineInfo[] = nailMap.lines.map((lines: number[], n0Idx: number) =>
+            lines.map((n1Idx: number) => [
+                getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.ClockWise),
+                // getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.AntiClockWise)
+            ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), [])
+                .concat(
+                    lines.map((n1Idx: number) => [
+                        // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.ClockWise),
+                        // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.AntiClockWise)
+                    ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), []))
+        ).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), [])
+
+        const center = {
+            x: (maxX + minX) / 2,
+            y: (maxY + minY) / 2,
+        } // center
+        const radius = Math.max(maxX - center.x, maxY - center.y, center.x - minX, center.y - minY) // radius
+
+        log(center)
+        log(radius)
+
+        // nailMap ref to picture ref
+        minX = getX(minX!)
+        maxX = getX(maxX!)
+        minY = getY(minY!)
+        maxY = getY(maxY!)
 
         log(`thread "${thread.description}" calculate target`)
 
@@ -162,8 +156,8 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
                     y: -p.y * radius + center.y,
                 }))
                 .map(p => ({
-                    x: (p.x - project.nailMapTransformation.position.x) / project.nailMapTransformation.scale - minX! + 2,
-                    y: (p.y - project.nailMapTransformation.position.y) / project.nailMapTransformation.scale - minY! + 2,
+                    x: getX(p.x) - minX! + 2,
+                    y: getY(p.y) - minY! + 2,
                 }))
 
             const points = PixelLineHelper.get(p[0], p[1], PixelLineMode.Simple)

@@ -1,4 +1,3 @@
-import { Settings } from "http2"
 import { NailMapTransformation } from "./nailMap"
 
 export enum CalculationMethod {
@@ -13,7 +12,6 @@ export type Project = {
 
 export type ProjectSettings = {
     frameId: string
-    nailMapTransformation: NailMapTransformation
     threads: Thread[]
     calculationMethod: CalculationMethod
 }
@@ -30,6 +28,7 @@ export type Thread = {
     maxStep: number
     calculationThickness: number
     imageData: string
+    imageTransformation: NailMapTransformation
     colorOptions: ColorOptions
     luminosityOptions: LuminosityOptions
     description?: string
@@ -51,15 +50,6 @@ export namespace ProjectHelper {
     export function defaultSettings(): ProjectSettings {
         return {
             frameId: '',
-            nailMapTransformation: {
-
-                scale: 1,
-                angle: 0,
-                position: {
-                    x: 0,
-                    y: 0,
-                }
-            },
             threads: [],
             calculationMethod: CalculationMethod.delta,
         }
@@ -72,6 +62,14 @@ export namespace ProjectHelper {
             maxStep: 4000,
             calculationThickness: 0.1,
             imageData: '',
+            imageTransformation: {
+                scale: 1,
+                angle: 0,
+                position: {
+                    x: 0,
+                    y: 0,
+                }
+            },
             colorOptions: defaultColorOptions(),
             luminosityOptions: defaultLuminosityOptions(),
             description: "Black thread",

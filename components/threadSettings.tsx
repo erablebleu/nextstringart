@@ -1,7 +1,7 @@
 'use client'
 
 import { ColorOptions, LuminosityOptions, Thread } from "@/model"
-import { Box, Button, Card, CardContent, CardHeader, Grid, Stack, TextField } from "@mui/material"
+import { Box, Button, Grid, Stack, TextField } from "@mui/material"
 import { Delete } from "@mui/icons-material"
 import ImageSelector from "./imageSelector"
 import ColorSettings from "./colorSettings"
@@ -9,7 +9,7 @@ import LuminositySettings from "./luminositySettings"
 import ImagePreview from "./imagePreview"
 import NumericInput from "./numericInput"
 import ColorPicker from "./colorPicker"
-import { ChangeEvent, Fragment, useEffect, useState } from "react"
+import { ChangeEvent, useEffect, useState } from "react"
 
 interface Options {
     data: Thread
@@ -37,7 +37,8 @@ export default function ({ data, onChange, onDelete }: Options) {
     }
 
     return (
-        <Fragment>
+        <Stack
+        spacing={1}>
             <Grid container>
                 <Grid item xs={3}>
                     <ImageSelector
@@ -110,6 +111,6 @@ export default function ({ data, onChange, onDelete }: Options) {
                     />
                 </Grid>
             </Grid>
-        </Fragment>
+        </Stack>
     )
 }

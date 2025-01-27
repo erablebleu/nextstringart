@@ -24,7 +24,7 @@ export default function ({ children, params }: { children: ReactNode, params: Pr
     const pathname = usePathname()
     let tab = pathname.split('/').at(-1)
 
-    if (!tab || !['raw', 'settings', 'map', 'result'].includes(tab))
+    if (!tab || !['raw', 'settings', 'result'].includes(tab))
         tab = 'raw'
 
     async function handleDelete() {
@@ -46,7 +46,6 @@ export default function ({ children, params }: { children: ReactNode, params: Pr
                 <Tabs value={tab}>
                     <Tab value="raw" label="Raw" href={`/project/${projectId}/${projectVersion}/raw`} LinkComponent={Link} />
                     <Tab value="settings" label="Settings" href={`/project/${projectId}/${projectVersion}/settings`} LinkComponent={Link} />
-                    <Tab value="map" label="Map" href={`/project/${projectId}/${projectVersion}/map`} LinkComponent={Link} />
                     <Tab value="result" label="Result" href={`/project/${projectId}/${projectVersion}/result`} LinkComponent={Link} />
                 </Tabs>
             </Stack>
