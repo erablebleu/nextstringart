@@ -56,7 +56,7 @@ export default function () {
 
     async function handleMinus(axis: string) {
         const value: number = step[axis]
-        handleMove(axis, Axis[axis].convert?.(value) ?? value)
+        handleMove(axis, -(Axis[axis].convert?.(value) ?? value))
     }
 
     async function handlePlus(axis: string) {
