@@ -22,7 +22,7 @@ export default function ({ projectId }: Options) {
     const selectedProjectVersion = pathname.split('/')[3]
 
     function isRunning(item: ProjectVersionInfo & CalculationJobInfo): boolean {
-        return item.progress != undefined
+        return item.progress !== undefined
     }
 
     async function handleSelect(item: ProjectVersionInfo & CalculationJobInfo) {
@@ -52,11 +52,10 @@ export default function ({ projectId }: Options) {
                             onClick={() => handleSelect(item)}>
                             <Stack>
                                 <ListItemText primary={item.version} />
-                                {isRunning(item) ?
-                                    <LinearProgress variant="determinate" value={item.progress * 100}
+                                {isRunning(item)
+                                    ? <LinearProgress variant="determinate" value={item.progress * 100}
                                         sx={{ width: '100%' }} />
-                                    :
-                                    <Rating
+                                    : <Rating
                                         size="small"
                                         value={item.rating ?? 0}
                                         precision={0.5}
