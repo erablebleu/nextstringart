@@ -2,7 +2,12 @@ import { NailMapTransformation } from "./nailMap"
 
 export enum CalculationMethod {
     delta = 'delta',
-    mri = 'mri'
+    mri = 'mri',
+}
+
+export enum ContinuityMode {
+    continuous = 'continuous',
+    discontinuous = 'discontinuous',
 }
 
 export type Project = {
@@ -32,6 +37,7 @@ export type Thread = {
     colorOptions: ColorOptions
     luminosityOptions: LuminosityOptions
     description?: string
+    continuityMode?: ContinuityMode
 }
 
 export type LuminosityOptions = {

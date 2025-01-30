@@ -27,7 +27,7 @@ export default function ({ params }: { params: Promise<Parameters> }) {
             </Fragment>
         )
     }
-    if (data.progress == undefined) {
+    if (data.progress === undefined) {
         return (
             <Stepper
                 projectId={projectId}

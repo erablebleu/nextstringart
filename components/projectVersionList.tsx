@@ -5,6 +5,7 @@ import { ProjectVersionInfo } from "@/model"
 import { CalculationJobInfo } from "@/tools/calculation/calculationJob"
 import { fetchAndThrow } from "@/tools/fetch"
 import { LinearProgress, List, ListItem, ListItemButton, ListItemText, Rating, Stack } from "@mui/material"
+import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Fragment } from "react"
 import useSWR from "swr"
@@ -25,15 +26,13 @@ export default function ({ projectId }: Options) {
         return item.progress !== undefined
     }
 
-    async function handleSelect(item: ProjectVersionInfo & CalculationJobInfo) {
+    function getHref(item: ProjectVersionInfo & CalculationJobInfo): string {
         const pathSegments = pathname.split('/')
         pathSegments.splice(0, 4)
 
-        const target = isRunning(item)
+        return isRunning(item)
             ? `/project/${projectId}/${item.version}/result`
             : `/project/${projectId}/${item.version}/${pathSegments.join('/')}`
-
-        router.push(target)
     }
 
     if (isLoading || !data)
@@ -49,7 +48,8 @@ export default function ({ projectId }: Options) {
                     <ListItem key={item.version} disablePadding>
                         <ListItemButton
                             selected={item.version == selectedProjectVersion}
-                            onClick={() => handleSelect(item)}>
+                            href={getHref(item)}
+                            LinkComponent={Link}>
                             <Stack>
                                 <ListItemText primary={item.version} />
                                 {isRunning(item)

@@ -1,5 +1,5 @@
 import { Instructions, Nail, ProjectSettings, RotationDirection, Step, Thread } from "@/model"
-import { CalculationWokerMessage, CalculationWorkerInfo, CalculationWorkerStartData } from "./calculationWorker"
+import { buildContinuity, CalculationWokerMessage, CalculationWorkerInfo, CalculationWorkerStartData } from "./calculationWorker"
 import { Line, LineHelper, Point } from "@/tools/geometry"
 import { parentPort } from "worker_threads"
 import { PixelLineHelper, PixelLineMode, WeightPoint } from "../pixelLine"
@@ -45,7 +45,10 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
     let startTime: DOMHighResTimeStamp,
         endTime: DOMHighResTimeStamp
 
-    var result: Array<Step> = []
+    const result: Instructions = {
+        nails,
+        steps: []
+    }
 
     startTime = performance.now()
 
@@ -53,13 +56,14 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         const thread: Thread = project.threads[info.threadIndex]
         const imageInfo: ImageInfo = imageDatas[info.threadIndex]
         const imageData: Uint8Array = imageInfo.data
+        const steps: Array<LineInfo> = []
         info.stepCount = thread.maxStep
         info.stepIndex = 0
 
-        let minX: number = 99999999,
-            maxX: number = -99999999,
-            minY: number = 99999999,
-            maxY: number = -99999999
+        let minX: number | undefined,
+            maxX: number | undefined,
+            minY: number | undefined,
+            maxY: number | undefined
 
         function getX(x: number): number {
             return (x! - thread.imageTransformation.position.x) / thread.imageTransformation.scale
@@ -70,10 +74,10 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         }
 
         function updateMinMax(p: Point) {
-            minX = Math.min(minX, p.x)
-            maxX = Math.max(maxX, p.x)
-            minY = Math.min(minY, p.y)
-            maxY = Math.max(maxY, p.y)
+            minX = Math.min(minX ?? p.x, p.x)
+            maxX = Math.max(maxX ?? p.x, p.x)
+            minY = Math.min(minY ?? p.y, p.y)
+            maxY = Math.max(maxY ?? p.y, p.y)
         }
 
         function getLineInfo(n0Idx: number, r0: RotationDirection, n1Idx: number, r1: RotationDirection): LineInfo {
@@ -87,20 +91,17 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         const lines: LineInfo[] = nailMap.lines.map((lines: number[], n0Idx: number) =>
             lines.map((n1Idx: number) => [
                 getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.ClockWise),
-                // getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.AntiClockWise)
-            ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), [])
-                .concat(
-                    lines.map((n1Idx: number) => [
-                        // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.ClockWise),
-                        // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.AntiClockWise)
-                    ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), []))
-        ).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), [])
+                // getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.AntiClockWise),
+                // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.ClockWise),
+                // getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.AntiClockWise),
+            ])
+        ).flat(2)
 
         const center = {
-            x: (maxX + minX) / 2,
-            y: (maxY + minY) / 2,
+            x: (maxX! + minX!) / 2,
+            y: (maxY! + minY!) / 2,
         } // center
-        const radius = Math.max(maxX - center.x, maxY - center.y, center.x - minX, center.y - minY) // radius
+        const radius = Math.max(maxX! - center.x, maxY! - center.y, center.x - minX!, center.y - minY!) // radius
 
         log(center)
         log(radius)
@@ -196,11 +197,8 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
             }
         })
 
-        const steps: Array<LineInfo> = []
-
         log(`thread "${thread.description}" search path`)
         // log(linesWeights)
-        var start = new Date()
 
         let nextLine: WeightLine | undefined
         let lineError: number | undefined
@@ -260,110 +258,10 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         }
         while (nextLine && info.stepIndex < thread.maxStep)
 
-        // temp because no continuity
-        for (const step of steps) {
-            result.push({
-                nailIndex: step.n0Idx,
-                direction: RotationDirection.ClockWise,
-            })
-            result.push({
-                nailIndex: step.n1Idx,
-                direction: RotationDirection.ClockWise,
-            })
-        }
-
-        return {
-            nails,
-            steps: result
-        }
-
-        let step: Step = {
-            nailIndex: 0,
-            direction: RotationDirection.ClockWise,
-        }
-
-        const dst = (idx: number) => {
-            if (idx > step.nailIndex)
-                return Math.min(idx - step.nailIndex, step.nailIndex + nails.length - idx)
-            else
-                return Math.min(step.nailIndex - idx, idx + nails.length - step.nailIndex)
-        }
-
-
-        // for (let j = -1000; j < 1000; j++) {
-
-        // combine lines
-        while (steps.length > 0) {
-            let d = 9999
-            let index: number | undefined = undefined
-            let reverse: boolean = false
-
-            // direct             
-            for (let j = 0; j < steps.length; j++) {
-                const s = steps[j]
-                const dst0 = dst(s.n0Idx)
-                const dst1 = dst(s.n1Idx)
-
-                if (dst0 == 0) {
-                    result.push(step = {
-                        nailIndex: s.n1Idx,
-                        direction: RotationDirection.ClockWise,
-                    })
-                    steps.splice(j, 1)
-                    break
-                }
-                if (dst1 == 0) {
-                    result.push(step = {
-                        nailIndex: s.n0Idx,
-                        direction: RotationDirection.ClockWise,
-                    })
-                    steps.splice(j, 1)
-                    break
-                }
-                if (dst0 < d) {
-                    d = dst0
-                    index = j
-                }
-                if (dst1 < d) {
-                    d = dst1
-                    index = j
-                    reverse = true
-                }
-            }
-
-            if (index === undefined)
-                continue
-
-            const s = steps[Math.abs(index!)]
-            log(`step:${step.nailIndex} index:${index} d:${d} s:${s.n0Idx}.${s.n1Idx}`)
-
-            if (reverse) {
-                result.push({
-                    nailIndex: s.n1Idx,
-                    direction: RotationDirection.ClockWise,
-                })
-                result.push(step = {
-                    nailIndex: s.n0Idx,
-                    direction: RotationDirection.ClockWise,
-                })
-            } else {
-                result.push({
-                    nailIndex: s.n0Idx,
-                    direction: RotationDirection.ClockWise,
-                })
-                result.push(step = {
-                    nailIndex: s.n1Idx,
-                    direction: RotationDirection.ClockWise,
-                })
-            }
-            steps.splice(index!, 1)
-        }
+        result.steps.push(...buildContinuity(nails, steps))
     }
 
-    return {
-        nails: [],
-        steps: [],
-    }
+    return result
 }
 
 parentPort?.on('message', (data: CalculationWorkerStartData) => {

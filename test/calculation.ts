@@ -1,4 +1,4 @@
-import { Instructions, Project, ProjectSettings, Thread } from "@/model"
+import { Instructions, Project, ProjectSettings, Step, Thread } from "@/model"
 import { JimpHelper } from "@/tools/imaging/jimpHelper"
 import { Jimp } from "jimp"
 import { join } from "node:path"
@@ -9,9 +9,9 @@ const outDirectory = join(__dirname, 'out')
 
 run()
 
-async function run() { 
+async function run() {
     const projectId = '0b0bed28-e497-4590-a02d-5d5385257696'
-    const projectVersion = '20250124134500000'
+    const projectVersion = '20250130085059591'
     const project: Project = await projectRepository.read(projectId)
 
     const projectSettings: ProjectSettings = await projectRepository.getSettings(projectId, projectVersion)
@@ -30,6 +30,10 @@ async function run() {
     console.log(image.bitmap.width)
     console.log(image.bitmap.height)
     console.log(imageData.length)
+
+    instructions.steps = instructions.steps.filter((step: Step, index: number) => index <= 0 || step.nailIndex != instructions.steps[index - 1].nailIndex)
+
+    await projectRepository.set(projectId, projectVersion, { instructions })
 
 
     // @ts-ignore: invalid type
