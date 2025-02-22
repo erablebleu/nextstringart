@@ -7,27 +7,6 @@ import { Calculator } from "@/tools/calculation/calculator"
 export const DataDirectory = process.env.DATA_DIRECTORY ?? './data'
 export const SettingsFilePath = join(DataDirectory, '/machine/settings.json')
 
-// console.log('global')
-
-// const globalForApp = global as unknown as {
-//     machine?: SerialMachine
-//     calculator?: Calculator
-//     projectRepository?: ProjectRepository
-//     frameRepository?: FrameRepository
-// }
-
-// export const machine = globalForApp.machine || new SerialMachine()
-// export const calculator = globalForApp.calculator || new Calculator()
-// export const projectRepository = globalForApp.projectRepository || new ProjectRepository(join(DataDirectory, 'project'))
-// export const frameRepository = globalForApp.frameRepository || new FrameRepository(join(DataDirectory, 'frame'))
-
-// if (process.env.NODE_ENV !== "production") {
-//     globalForApp.machine = machine
-//     globalForApp.calculator = calculator
-//     globalForApp.projectRepository = projectRepository
-//     globalForApp.frameRepository = frameRepository
-// }
-
 const globalForApp = global as unknown as {
     machine: SerialMachine
     calculator: Calculator

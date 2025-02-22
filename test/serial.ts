@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import { join } from 'path';
 import { MachineJob, SerialMachine } from '../tools/machine/serial'
-import { GCodeGenerator, GCodeSettings } from '@/tools/machine/gcode/generator'
 import { MachineSettings } from '@/tools/machine/settings'
 import { Polar } from '@/tools/geometry/polar';
 import { Await } from '@/tools/await';
 import { Step, Frame, RotationDirection, NailMapHelper, FrameShape, PolygonFrame } from '@/model';
+import { WiringGCodeSettings, WiringGCodeGenerator } from '@/tools/machine/gcode/wiringGenerator';
 
 const outDirectory = join(__dirname, 'out')
 const stdin = process.stdin
@@ -16,7 +16,7 @@ async function run() {
     const machineSettings: MachineSettings = {
         path: '/dev/ttyUSB0', 
         baudRate: 250000,
-        radius: 481.5
+        radius: 480
     }
 
     const frame: PolygonFrame = {
@@ -39,12 +39,12 @@ async function run() {
             .map(x => `${x.position.x},${x.position.y},${x.polar.a},${x.polar.r}`).join('\r\n'),
         { flag: 'w' })
 
-    const gCodeSettings: GCodeSettings = {
+    const gCodeSettings: WiringGCodeSettings = {
         zMove: 23,
         zHigh: 29,
         zLow: 33,
     }
-    const gCodeGenerator = new GCodeGenerator(nailMap.nails, machineSettings, gCodeSettings)
+    const gCodeGenerator = new WiringGCodeGenerator(nailMap.nails, machineSettings, gCodeSettings)
 
     const steps: Array<Step> = [
         ...Array.from({length: 6 * 65}, (_, index) => ({ 
