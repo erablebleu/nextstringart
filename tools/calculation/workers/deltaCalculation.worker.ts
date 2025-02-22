@@ -1,16 +1,9 @@
-import { Instructions, Nail, ProjectSettings, RotationDirection, Step, Thread } from "@/model"
+import { ContinuityMode, Instructions, Nail, ProjectSettings, RotationDirection, Step, Thread } from "@/model"
 import { Line, LineHelper, Point } from "@/tools/geometry"
 import { parentPort } from "worker_threads"
-import { CalculationWokerMessage, CalculationWorkerInfo, CalculationWorkerStartData } from "./calculationWorker"
+import { buildContinuity, CalculationWokerMessage, CalculationWorkerInfo, CalculationWorkerStartData, LineInfo } from "./calculationWorker"
 import { PixelLineEvaluation, PixelLineHelper, PixelLineMode, WeightPoint } from "../pixelLine"
 import { ImageInfo } from "@/tools/imaging/jimpHelper"
-
-type LineInfo = Line & {
-    n0Idx: number
-    r0: RotationDirection
-    n1Idx: number
-    r1: RotationDirection
-}
 
 export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorkerStartData): Instructions {
     const project: ProjectSettings = projectSettings
@@ -25,7 +18,10 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
     let startTime: DOMHighResTimeStamp,
         endTime: DOMHighResTimeStamp
 
-    const result: Array<Step> = []
+    const result: Instructions = {
+        nails,
+        steps: []
+    }
 
     startTime = performance.now()
 
@@ -33,6 +29,7 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
         const thread: Thread = project.threads[info.threadIndex]
         const imageInfo: ImageInfo = imageDatas[info.threadIndex]
         const imageData: Uint8Array = imageInfo.data
+        const steps: Array<LineInfo> = []
         info.stepCount = thread.maxStep
         info.stepIndex = 0
 
@@ -68,11 +65,11 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
             lines.map((n1Idx: number) => [
                 getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.ClockWise),
                 getLineInfo(n0Idx, RotationDirection.ClockWise, n1Idx, RotationDirection.AntiClockWise)
-            ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), []),
+            ]).flat(1),
             lines.map((n1Idx: number) => [
                 getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.ClockWise),
                 getLineInfo(n0Idx, RotationDirection.AntiClockWise, n1Idx, RotationDirection.AntiClockWise)
-            ]).reduce((a: LineInfo[], b: LineInfo[]) => a.concat(b), []),
+            ]).flat(1),
         ])
 
         minX = getX(minX!)
@@ -102,14 +99,28 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
             direction: RotationDirection.ClockWise
         }
 
+        const discontinuousLines: Array<LineInfo> = lines.flat(2)
+
+        function getLines(): Array<LineInfo> {
+            switch (thread.continuityMode) {
+                case ContinuityMode.discontinuous:
+                    return discontinuousLines
+
+                case undefined:
+                case ContinuityMode.continuous:
+                default:
+                    return lines[nail!.nailIndex][nail!.direction]
+            }
+        }
+
         log(`thread "${thread.description}" search path`)
 
         do {
-            let nextNail: Step | undefined
+            let line: LineInfo | undefined
             let evaluation: PixelLineEvaluation | undefined
             let indicator: number = 0
 
-            for (const l of lines[nail!.nailIndex][nail!.direction]) {
+            for (const l of getLines()) {
                 const pixelLine: Array<WeightPoint> = PixelLineHelper.get({
                     x: getX(l.p0.x) - minX! + 2,
                     y: getY(l.p0.y) - minY! + 2,
@@ -125,15 +136,12 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
 
                 indicator = e.value
                 evaluation = e
-                nextNail = {
-                    nailIndex: l.n1Idx,
-                    direction: l.r1
-                }
+                line = l
             }
 
-            if (nextNail) {
+            if (line) {
                 evaluation?.apply()
-                result.push(nextNail)
+                steps.push(line)
                 info.stepIndex++
             }
 
@@ -145,15 +153,30 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
                 post({ info })
             }
 
-            nail = nextNail
+            nail = line ? {
+                nailIndex: line.n1Idx,
+                direction: line.r1
+            } : undefined
         }
         while (nail && info.stepIndex < info.stepCount)
+
+        switch (thread.continuityMode) {
+            case ContinuityMode.discontinuous:
+                result.steps.push(...buildContinuity(nails, steps))
+                break
+
+            case undefined:
+            case ContinuityMode.continuous:
+            default:
+                result.steps.push(...steps.map((l: LineInfo) => ({
+                    nailIndex: l.n1Idx,
+                    direction: l.r1,
+                })))
+                break
+        }
     }
 
-    return {
-        nails: nails,
-        steps: result,
-    }
+    return result
 }
 
 parentPort?.on('message', (data: CalculationWorkerStartData) => {

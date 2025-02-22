@@ -23,6 +23,7 @@ export const DELETE = withMiddleware(async (_, { params }: { params: Promise<Par
     const projectVersion = (await params).version
 
     await projectRepository.deleteVersion(projectId, projectVersion)
+    calculator.getJob({ projectId, projectVersion })?.cancel()
 
     return APINextResponse.Success
 })

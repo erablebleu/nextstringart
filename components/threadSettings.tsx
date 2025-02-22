@@ -1,7 +1,7 @@
 'use client'
 
-import { ColorOptions, LuminosityOptions, Thread } from "@/model"
-import { Box, Button, Grid, Stack, TextField } from "@mui/material"
+import { ColorOptions, ContinuityMode, LuminosityOptions, Thread } from "@/model"
+import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material"
 import { Delete } from "@mui/icons-material"
 import ImageSelector from "./imageSelector"
 import ColorSettings from "./colorSettings"
@@ -38,7 +38,7 @@ export default function ({ data, onChange, onDelete }: Options) {
 
     return (
         <Stack
-        spacing={1}>
+            spacing={1}>
             <Grid container>
                 <Grid item xs={3}>
                     <ImageSelector
@@ -77,6 +77,24 @@ export default function ({ data, onChange, onDelete }: Options) {
                                 <Delete />
                             </Button>
                         </Stack>
+
+                        <FormControl fullWidth>
+                            <InputLabel
+                                id="continuity-mode-label">
+                                Continuity mode
+                            </InputLabel>
+                            <Select
+                                labelId="continuity-mode-label"
+                                label="Continuity mode"
+                                size="small"
+                                value={state.continuityMode ?? ContinuityMode.continuous}
+                                onChange={(e) => handleChange(e.target.value as ContinuityMode, 'continuityMode')}>
+                                    <MenuItem value={ContinuityMode.continuous}>continuous</MenuItem>
+                                    <MenuItem value={ContinuityMode.discontinuous}>discontinuous</MenuItem>
+                            </Select>
+                        </FormControl>
+
+
                         <NumericInput
                             value={state.maxStep}
                             label="Max Step"

@@ -109,6 +109,7 @@ export class CalculationJob {
             id: this.id,
             projectId: this.projectId,
             status: this._status,
+            startedAt: this._startedAt,
         }
     }
 
