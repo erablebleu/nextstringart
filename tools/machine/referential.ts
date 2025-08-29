@@ -93,8 +93,8 @@ export class MachineReferential {
             value: startOptions.rz ?? 0,
             name: 'rz',
             motorLabel: 'X',
-            toM: v => v * Z_ROTATION_UNITS_PER_RAD,
-            toR: v => v / Z_ROTATION_UNITS_PER_RAD,
+            toM: v => - v * Z_ROTATION_UNITS_PER_RAD,
+            toR: v => - v / Z_ROTATION_UNITS_PER_RAD,
         }
     }
 

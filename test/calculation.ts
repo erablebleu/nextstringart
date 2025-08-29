@@ -7,12 +7,16 @@ import { projectRepository, frameRepository, machine, SettingsFilePath } from "@
 import { File } from "@/tools/file.back"
 import { PointingGCodeGenerator, PointingGCodeSettings } from "@/tools/machine/gcode/pointingGenerator"
 import { MachineSettings } from "@/tools/machine/settings"
+import { WiringGCodeGenerator, WiringGCodeSettings } from '@/tools/machine/gcode/wiringGenerator';
 
 const outDirectory = join(__dirname, 'out')
 
-// run()
+// linux usb write permission :
+// sudo chmod 666 /dev/ttyUSB0
 
-calculatePointing()
+// run()
+// calculatePointing()
+calculateThreading()
 
 async function run() {
     const projectId = '0b0bed28-e497-4590-a02d-5d5385257696'
@@ -66,4 +70,29 @@ async function calculatePointing() {
         await fs.promises.mkdir(outDirectory)
 
     await fs.promises.writeFile(join(outDirectory, 'pointing.gcode'), gCode.join('\n'), { flag: 'w' })
+}
+
+
+async function calculateThreading() {
+    const projectId = '51ee426a-c77e-47f9-a2d7-aea2b2564f46'
+    const projectVersion = '20250827150056019'
+    const instructions: Instructions = await projectRepository.getInstructions(projectId, projectVersion)
+    const machineSettings: MachineSettings = await File.readJSON<MachineSettings>(SettingsFilePath)
+
+    const gCodeSettings: WiringGCodeSettings = {
+        zMove: 15,
+        zHigh: 22,
+        zLow: 27,
+    }
+    const gCodeGenerator = new WiringGCodeGenerator(instructions.nails, machineSettings, gCodeSettings)
+
+    gCodeGenerator.addSteps(instructions.steps)
+    // gCodeGenerator.addSteps(instructions.steps.slice(0,2))
+
+    const gCode: string[] = gCodeGenerator.generate()
+
+    if (!fs.existsSync(outDirectory))
+        await fs.promises.mkdir(outDirectory)
+
+    await fs.promises.writeFile(join(outDirectory, 'threading.gcode'), gCode.join('\n'), { flag: 'w' })
 }

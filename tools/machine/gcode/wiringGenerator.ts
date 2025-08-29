@@ -38,8 +38,8 @@ export class WiringGCodeGenerator extends GCodeGenerator {
             const step: Step = steps[i]
             const node: Point = this.map[step.nailIndex].position
 
-            const entryTupleNode: Point = step.direction == RotationDirection.ClockWise ? super.getPreviousNail(step.nailIndex) : super.getNextNail(step.nailIndex)
-            const exitTupleNode: Point = step.direction == RotationDirection.ClockWise ? super.getNextNail(step.nailIndex) : super.getPreviousNail(step.nailIndex)
+            const entryTupleNode: Point = step.direction == RotationDirection.ClockWise ? super.getNextNail(step.nailIndex) : super.getPreviousNail(step.nailIndex)
+            const exitTupleNode: Point = step.direction == RotationDirection.ClockWise ? super.getPreviousNail(step.nailIndex) : super.getNextNail(step.nailIndex)
 
             const entry_d: number = Cartesian.distance(entryTupleNode, node) / 2
             const entry_d0 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(10, 2))
