@@ -79,15 +79,17 @@ async function calculateThreading() {
     const instructions: Instructions = await projectRepository.getInstructions(projectId, projectVersion)
     const machineSettings: MachineSettings = await File.readJSON<MachineSettings>(SettingsFilePath)
 
+    machineSettings.radius = 479
+    
     const gCodeSettings: WiringGCodeSettings = {
         zMove: 15,
-        zHigh: 22,
+        zHigh: 24,
         zLow: 27,
     }
     const gCodeGenerator = new WiringGCodeGenerator(instructions.nails, machineSettings, gCodeSettings)
 
-    gCodeGenerator.addSteps(instructions.steps)
-    // gCodeGenerator.addSteps(instructions.steps.slice(0,2))
+    gCodeGenerator.addFlatSteps(instructions.steps)
+    // gCodeGenerator.addSteps(instructions.steps.slice(187))
 
     const gCode: string[] = gCodeGenerator.generate()
 
