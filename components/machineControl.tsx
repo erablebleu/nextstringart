@@ -105,6 +105,11 @@ export default function () {
                         onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/job/cancel', { method: 'POST' }))}>
                         <CropSquare />
                     </Button>
+                    <Button
+                        disabled={data.job?.status != undefined}
+                        onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/job/resend', { method: 'POST' }))}>
+                        Resend
+                    </Button>
                 </ButtonGroup>
                 {data.job && <Typography margin={1}>
                     {data.job.name}: {MachineJobStatus[data.job.status]} {data.job.commandIndex} / {data.job.commandCount}
