@@ -30,6 +30,7 @@ export class WiringGCodeGenerator extends GCodeGenerator {
     }
 
     public addSteps(steps: Step[]) {
+        super.setSpeedProfile(SpeedProfile.Fast)
         super.moveToPolar({ r: this._innerRingX })
         super.displayMessage(`waiting start command`)
         super.addMetadata('command', 'pause')
@@ -84,11 +85,12 @@ export class WiringGCodeGenerator extends GCodeGenerator {
     }
 
     public addFlatSteps(steps: Step[]) {
+        super.setSpeedProfile(SpeedProfile.Fast)
         super.moveToPolar({ r: this._innerRingX, z: this._gCodeSettings.zHigh })
         super.displayMessage(`waiting start command`)
         super.addMetadata('command', 'pause')
 
-        for (let i = 0; i < steps.length; i++) {
+        for (let i = 2273; i < steps.length; i++) {
             const step: Step = steps[i]
             const node: Point = this.map[step.nailIndex].position
 
@@ -108,11 +110,49 @@ export class WiringGCodeGenerator extends GCodeGenerator {
             const exit_p0 = Cartesian.getFurthestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d0), this._center)
             const exit_p1 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d1), this._center)
 
-            super.displayMessage(`step ${i + 1}/${steps.length} nail ${step.nailIndex} ${step.direction == RotationDirection.ClockWise ? 'c' : 'a'}`)
+            super.displayMessage(`step ${i + 1} nail ${step.nailIndex} ${step.direction == RotationDirection.ClockWise ? 'c' : 'a'}`)
             super.addMetadata('step', `${i + 1}/${steps.length}`)
             super.addMetadata('target_nail', `${step.nailIndex}`)
             super.setSpeedProfile(SpeedProfile.Fast)
             super.moveToPolar({ r: this._innerRingX })
+            super.moveToPolar({ a: entry_p0_polar.a })
+            super.moveToPolar({ r: entry_p0_polar.r })
+            super.setSpeedProfile(SpeedProfile.Slow)
+            super.buildLinearTrajectory(entry_p0, entry_p1)
+            super.moveToCartesian(exit_p0)
+            super.buildLinearTrajectory(exit_p0, exit_p1)
+        }
+
+        super.setSpeedProfile(SpeedProfile.Fast)
+        super.moveToPolar({ r: this._innerRingX })
+    }
+
+    public testNails(steps: Step[]) {
+        super.setSpeedProfile(SpeedProfile.Fast)
+        super.moveToPolar({ r: this._innerRingX, z: this._gCodeSettings.zHigh })
+        super.displayMessage(`waiting start command`)
+        super.addMetadata('command', 'pause')
+
+        for (let i = 1; i < this.map.length; i+=2) {
+            const node: Point = this.map[i].position
+
+            const entryTupleNode: Point = super.getPreviousNail(i)
+            const exitTupleNode: Point = super.getNextNail(i)
+
+            const entry_d: number = Cartesian.distance(entryTupleNode, node) / 2
+            const entry_d0 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(10, 2))
+            const entry_d1 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(15, 2))
+            const entry_p0 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(entryTupleNode, node, entry_d0), this._center)
+            const entry_p1 = Cartesian.getFurthestPoint(Cartesian.getEquidistantPoints(entryTupleNode, node, entry_d1), this._center)
+            const entry_p0_polar = Polar.fromCartesian(entry_p0)
+
+            const exit_d: number = Cartesian.distance(node, exitTupleNode) / 2
+            const exit_d0 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(15, 2))
+            const exit_d1 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(10, 2))
+            const exit_p0 = Cartesian.getFurthestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d0), this._center)
+            const exit_p1 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d1), this._center)
+
+            super.setSpeedProfile(SpeedProfile.Fast)
             super.moveToPolar({ a: entry_p0_polar.a })
             super.moveToPolar({ r: entry_p0_polar.r })
             super.setSpeedProfile(SpeedProfile.Slow)

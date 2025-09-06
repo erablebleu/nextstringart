@@ -24,7 +24,7 @@ export abstract class GCodeGenerator {
     public static readonly MetadataRegex = / *;md\.(?<key>[^:]+):(?<value>.*)/
 
     public static readonly StartGCode = [
-        //'M92 X16', // Set Axis Steps-per-unit
+        //'M92 X30', // Set Axis Steps-per-unit
         //'M201 X200 Y200 Z100', // Print / Travel Move Limits | default values: { 200, 200, 100, 3000 } | mm / s²
         //'M203 X400 Y200 Z50', // Set Max Feedrate | default values: { 200, 200, 100, 25 } | mm / s
 

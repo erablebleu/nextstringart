@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { Frame, Instructions, NailMap, NailMapHelper, Project, ProjectSettings, Step, Thread } from "@/model"
+import { Frame, Instructions, NailMap, NailMapHelper, Project, ProjectSettings, RotationDirection, Step, Thread } from "@/model"
 import { JimpHelper } from "@/tools/imaging/jimpHelper"
 import { Jimp } from "jimp"
 import { join } from "node:path"
@@ -72,23 +72,21 @@ async function calculatePointing() {
     await fs.promises.writeFile(join(outDirectory, 'pointing.gcode'), gCode.join('\n'), { flag: 'w' })
 }
 
-
 async function calculateThreading() {
     const projectId = '51ee426a-c77e-47f9-a2d7-aea2b2564f46'
     const projectVersion = '20250827150056019'
     const instructions: Instructions = await projectRepository.getInstructions(projectId, projectVersion)
     const machineSettings: MachineSettings = await File.readJSON<MachineSettings>(SettingsFilePath)
-
-    machineSettings.radius = 479
     
     const gCodeSettings: WiringGCodeSettings = {
         zMove: 15,
-        zHigh: 24,
+        zHigh: 28,
         zLow: 27,
     }
     const gCodeGenerator = new WiringGCodeGenerator(instructions.nails, machineSettings, gCodeSettings)
 
     gCodeGenerator.addFlatSteps(instructions.steps)
+    // gCodeGenerator.testNails(instructions.steps)
     // gCodeGenerator.addSteps(instructions.steps.slice(187))
 
     const gCode: string[] = gCodeGenerator.generate()
