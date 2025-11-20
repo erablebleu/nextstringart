@@ -77,7 +77,6 @@ export default function ({ projectId, projectVersion }: Options) {
     }, [projectId, projectVersion])
 
     async function goToStep(number: number) {
-        console.log('gotostep: ' + number)
         setSettings({
             ...settings,
             step: number

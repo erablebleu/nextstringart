@@ -47,8 +47,8 @@ const Z_TRANSLATION_STEP_PER_UNIT = 40
 // 4 = 80 / 20 pulley ratio
 // 4 steps per unit (see marlin/Configuration.h)
 const Z_ROTATION_STEP_COUNT = 3200
-const Z_ROTATION_PULLEY_RATIO = 4 * 4
-const Z_ROTATION_STEPS_PER_UNIT = 16
+const Z_ROTATION_PULLEY_RATIO = 600 / 20
+const Z_ROTATION_STEPS_PER_UNIT = 30
 const Z_ROTATION_UNITS_PER_RAD = Z_ROTATION_STEP_COUNT * Z_ROTATION_PULLEY_RATIO / (Z_ROTATION_STEPS_PER_UNIT * 2 * Math.PI) // units per rad
 
 type AxisTransform = (value: number) => number

@@ -43,10 +43,6 @@ export default function ({ value, onChange, label, disabled, min, max, type, hid
         if (max !== undefined && result > max)
             result = max
 
-        console.log({
-            string,
-            min, max, result
-        })
         onChange?.(result)
     };
 

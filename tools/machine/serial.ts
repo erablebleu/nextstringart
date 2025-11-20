@@ -56,6 +56,22 @@ export class SerialMachine {
         })
     }
 
+    public resendLastLine() {
+        if (!this._currentJob)
+            return
+
+        const line: string | undefined = this._currentJob?.getLastSentLine()
+
+        if (!line)
+            return
+
+        this._port!.write(line + this._settings!.delimiter, undefined, err => {
+            if (err) {
+                this.setStatus(MachineStatus.Error)
+            }
+        })
+    }
+
     private setStatus(status: MachineStatus) {
         this._status = status
     }
@@ -345,6 +361,13 @@ export class MachineJob {
             return line
         }
         while (true)
+    }
+
+    public getLastSentLine() : string | undefined {
+        if (this._lineIndex == 0)
+            return
+
+        return this._data[this._lineIndex - 1]
     }
 
     public pause() {
