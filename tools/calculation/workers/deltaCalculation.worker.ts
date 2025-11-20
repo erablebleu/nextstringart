@@ -77,6 +77,8 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
         minY = getY(minY!)
         maxY = getY(maxY!)
 
+        // TODO : thread.calculationThickness should be scaled
+
         log(`calculate pixel lines`)
 
         log(`thread "${thread.description}" calculate target`)

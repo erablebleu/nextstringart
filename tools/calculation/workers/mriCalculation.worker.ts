@@ -4,6 +4,9 @@ import { Line, LineHelper, Point } from "@/tools/geometry"
 import { parentPort } from "worker_threads"
 import { PixelLineHelper, PixelLineMode, WeightPoint } from "../pixelLine"
 import { ImageInfo } from "@/tools/imaging/jimpHelper"
+import { Jimp } from "jimp"
+import { MathHelper } from "@/tools/mathHelper"
+import fs from 'node:fs'
 
 type LineInfo = Line & {
     n0Idx: number
@@ -12,10 +15,13 @@ type LineInfo = Line & {
     r1: RotationDirection
 }
 
-type WeightLine = {
-    line: LineInfo
+type RadonPoint = {
     s: number // distance to center [-1;1]
     a: number // angle with x [0;PI]
+}
+
+type WeightLine = RadonPoint & {
+    line: LineInfo
     weight: number
 }
 
@@ -31,7 +37,12 @@ export function radon(p0: Point, p1: Point): { a: number, s: number } {
     return a < Math.PI ? { a, s } : { a: a - Math.PI, s: -s }
 }
 
-export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerStartData): Instructions {
+function getRadonError(p0: RadonPoint, p1: RadonPoint): number {
+
+    return  Math.sqrt(Math.pow((p0.s - p1.s) / 2, 2) + Math.pow((p0.a - p1.a) / Math.PI, 2))
+}
+
+export async function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerStartData): Promise<Instructions> {
     const project: ProjectSettings = projectSettings
     const nails: Array<Nail> = nailMap.nails
     const info: CalculationWorkerInfo = {
@@ -100,17 +111,19 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         const center = {
             x: (maxX! + minX!) / 2,
             y: (maxY! + minY!) / 2,
-        } // center
-        const radius = Math.max(maxX! - center.x, maxY! - center.y, center.x - minX!, center.y - minY!) // radius
+        }
+        const radius = Math.max(maxX! - center.x, maxY! - center.y, center.x - minX!, center.y - minY!)
 
-        log(center)
-        log(radius)
+        log('center: ', center)
+        log('radius: ', radius)
 
         // nailMap ref to picture ref
         minX = getX(minX!)
         maxX = getX(maxX!)
         minY = getY(minY!)
         maxY = getY(maxY!)
+
+        // TODO : thread.calculationThickness should be scaled
 
         log(`thread "${thread.description}" calculate target`)
 
@@ -132,7 +145,7 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         const heatmap: number[] = new Array(HEATMAP_SIZE * HEATMAP_SIZE)
 
         const getRadon = (idx: number) => {
-            const is = idx / HEATMAP_SIZE
+            const is = Math.floor(idx / HEATMAP_SIZE)
             const ia = idx % HEATMAP_SIZE
             return {
                 s: -1 + (is + 0.5) * 2 / HEATMAP_SIZE,
@@ -140,13 +153,15 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
             }
         }
 
-        for (let j = 0; j < heatmap.length; j++) {
-            const r = getRadon(j)
+        // build heatmap
+        for (let i = 0; i < heatmap.length; i++) {
+            heatmap[i] = 0
+            const r = getRadon(i)
             // x = z sin(a) + s cos(a)
             // y = -z cos(a) + s sin(a)
             // => look for points on the cercke x² + y² = R²
             // z² = R² - s²
-            const z = Math.sqrt(1 - Math.pow(r.s, 2)) // 
+            const z = Math.sqrt(1 - Math.pow(r.s, 2))
             const p = [-z, z]
                 .map(z => ({
                     x: z * Math.sin(r.a) + r.s * Math.cos(r.a),
@@ -164,28 +179,38 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
             const points = PixelLineHelper.get(p[0], p[1], PixelLineMode.Simple)
                 .filter(p => p.x >= 0 && p.x < target.length && p.y >= 0 && p.y < target[0].length)
 
-            heatmap[j] = points.length == 0
-                ? 0
-                : points.reduce((sum: number, p: WeightPoint) => sum + target[p.x][p.y], 0) / points.length
+            if (points.length == 0)
+                continue
 
-            if (j % 5693 == 0) {
-                log(`j:${j} => heat:${heatmap[j]}`)
-                // log(points)
-            }
+            heatmap[i] = MathHelper.sum(points.map(p => target[p.x][p.y])) /*/ points.length*/
         }
 
-        const hMax = Math.max(...heatmap)
-        log(`hMax:${hMax}`)
+        const hMax = MathHelper.max(heatmap)
+        log('hMax: ', hMax)
 
         // clamp heatmap to [0;1]
         for (let j = 0; j < heatmap.length; j++)
-            heatmap[j] = heatmap[j] / hMax
+            heatmap[j] /= hMax
 
-        // log(heatmap)
-        log(`target[${target.length}][${target[0].length}]`)
+
+
+
+        /* save heatmap image */
+        await exportImage(`./test/out/heatmap.png`, heatmap, { width: HEATMAP_SIZE, height: HEATMAP_SIZE })
+        /* save heatmap image */
+
+        /* save heatmap csv */
+        await fs.promises.writeFile('./test/out/radon.csv', heatmap.map((_, j) => {
+            const r = getRadon(j)
+            return `${j},${j % HEATMAP_SIZE},${Math.floor(j / HEATMAP_SIZE)},${r.a},${r.s}`
+        }).join('\r\n'))
+        /* save heatmap csv */
+
+
+
 
         const linesWeights: WeightLine[] = lines.map((l: LineInfo) => {
-            const p = [l.p0, l.p1].map(p => ({
+            const p: Array<Point> = [l.p0, l.p1].map(p => ({
                 x: (p.x - center.x) / radius,
                 y: -(p.y - center.y) / radius,
             }))
@@ -198,33 +223,48 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
         })
 
         log(`thread "${thread.description}" search path`)
-        // log(linesWeights)
-
         let nextLine: WeightLine | undefined
         let lineError: number | undefined
         let nextIndex: number | undefined
+        let nextHeat: number | undefined
 
         do {
-            nextIndex = 0
+            nextHeat = undefined
+            nextIndex = undefined
 
-            for (let j = 1; j < heatmap.length; j++) {
-                if (heatmap[j] <= heatmap[nextIndex])
+            /* save heatmap image */
+            if (info.stepIndex < 10)
+                await exportImage(`./test/out/step_${info.stepIndex}_heatmap.png`, heatmap, { width: HEATMAP_SIZE, height: HEATMAP_SIZE })
+            /* save heatmap image */
+
+            // search heatmap max
+            for (let i = 1; i < heatmap.length; i++) {
+                const heat = heatmap[i]
+
+                if (nextHeat && heat <= nextHeat)
                     continue
 
-                nextIndex = j
+                nextHeat = heat
+                nextIndex = i
             }
 
-            if (!nextIndex)
-                break;
+            if (nextIndex === undefined
+                || nextHeat == 0)
+                break
 
+
+            const maxLineError = 0.02
             const r = getRadon(nextIndex)
             nextLine = undefined
             lineError = undefined
 
+            // search the closest line of heatmap max
             for (const l of linesWeights) {
-                const error = Math.sqrt(Math.pow(l.s - r.s, 2) + Math.pow(l.a - r.a, 2))
+                const error = getRadonError(l, r)
 
-                if (l.weight <= 0 || lineError && error >= lineError)
+                if (error >= maxLineError
+                    || l.weight <= 0 
+                    || lineError && error >= lineError)
                     continue
 
                 lineError = error
@@ -234,7 +274,14 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
             if (!nextLine)
                 break;
 
-            steps.push({ ...nextLine.line })
+            // console.log({
+            //     ...r,
+            //     lineError,
+            //     nextIndex,
+            //     nextLine,
+            // })
+
+            steps.push(nextLine.line)
             info.stepIndex++
             nextLine.weight = 0
 
@@ -246,15 +293,32 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
                 post({ info })
             }
 
-            for (let j = 0; j < heatmap.length; j++) {
-                const r = getRadon(j)
+            const mask = heatmap.map((_, i) => {
+                const r = getRadon(i)
+
+                if (!nextLine)
+                    return 0
+
+                // (s² + s0² - 2 * s * s0 * cos(da)) / sin²(da)
                 const t = (Math.pow(nextLine.s, 2) + Math.pow(r.s, 2) - 2 * nextLine.s * r.s * Math.cos(nextLine.a - r.a)) / Math.pow(Math.sin(nextLine.a - r.a), 2)
 
                 if (t > 1)
-                    continue
+                    return 0
 
-                heatmap[j] -= 1 / (Math.abs(Math.sin(nextLine.a - r.a)))
-            }
+                // const k = 0.01
+                const k = 0.01
+                // const k = thread.calculationThickness
+                return k * 1 / Math.abs(Math.sin(nextLine.a - r.a)) / hMax
+            })
+
+            /* save heatmap mask image */
+            if (info.stepIndex < 10)
+                await exportImage(`./test/out/step_${info.stepIndex - 1}_heatmap_mask.png`, mask, { width: HEATMAP_SIZE, height: HEATMAP_SIZE })
+            /* save heatmap mask image */
+
+            // apply mask
+            for (let j = 0; j < heatmap.length; j++)
+                heatmap[j] = MathHelper.clamp(heatmap[j] - mask[j], 0, 1)
         }
         while (nextLine && info.stepIndex < thread.maxStep)
 
@@ -264,9 +328,9 @@ export function mri({ nailMap, imageDatas, projectSettings }: CalculationWorkerS
     return result
 }
 
-parentPort?.on('message', (data: CalculationWorkerStartData) => {
+parentPort?.on('message', async (data: CalculationWorkerStartData) => {
     log('start')
-    const result = mri(data)
+    const result = await mri(data)
     post({ result })
 })
 
@@ -274,9 +338,24 @@ function post(message: CalculationWokerMessage) {
     parentPort?.postMessage(message)
 }
 
-function log(message: string | any) {
-    if (typeof message !== 'string' && !(message instanceof String))
-        message = JSON.stringify(message)
+function log(message?: any, ...optionalParams: any[]) {
+    console.log(`[mriCalculation.worker] `, message, ...optionalParams)
+}
 
-    console.log(`[mriCalculation.worker] ${message}`)
+async function exportImage(path: string, data: Array<number>, { width, height, min, max }: { width: number, height: number, min?: number, max?: number }) {
+    let image = new Jimp({
+        width,
+        height,
+        color: 'white'
+    })
+
+    min ??= 0
+    max ??= MathHelper.max(data)
+
+    image.scan((_, __, i) => {
+        for (let j = 0; j < 3; j++)
+            image.bitmap.data[i + j] = 255 * (data[i / 4] - min) / max
+    })
+
+    await image.write(path as any)
 }
