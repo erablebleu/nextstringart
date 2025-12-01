@@ -9,7 +9,9 @@
     "lint": "next lint",
     "tarballize": "del tarball.tar && 7z a -xr@.dockerignore tarball.tar .\\*",
     "test_serial": "npx tsx -r ./env.local.ts test/serial.ts",
-    "test_calculation": "npx tsx -r ./env.local.ts test/calculation.ts"
+    "test_calculation": "npx tsx -r ./env.local.ts test/calculation.ts",
+    "test_pointing": "npx tsx -r ./env.local.ts test/pointing.ts",
+    "test_threading": "npx tsx -r ./env.local.ts test/threading.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
