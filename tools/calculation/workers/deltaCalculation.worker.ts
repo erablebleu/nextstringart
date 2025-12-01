@@ -27,7 +27,7 @@ export function delta({ nailMap, imageDatas, heatMapDatas, projectSettings }: Ca
 
     for (info.threadIndex = 0; info.threadIndex < project.threads.length; info.threadIndex++) {
         const thread: Thread = project.threads[info.threadIndex]
-        const imageInfo: ImageInfo = imageDatas[info.threadIndex]!
+        const imageInfo: ImageInfo = imageDatas[info.threadIndex]
         const imageData: Uint8Array = imageInfo.data
         const heatMapData: Uint8Array | undefined = heatMapDatas[info.threadIndex]?.data
         const steps: Array<LineInfo> = []

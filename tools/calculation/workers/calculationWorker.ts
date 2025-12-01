@@ -18,7 +18,7 @@ export type CalculationWorkerStartData = {
     project: Project
     projectSettings: ProjectSettings
     nailMap: NailMap
-    imageDatas: Array<ImageInfo | null>,
+    imageDatas: Array<ImageInfo>,
     heatMapDatas: Array<ImageInfo | null>,
 }
 

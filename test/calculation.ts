@@ -28,8 +28,9 @@ async function run() {
     projectSettings.threads[0].heatMapData = await image.getBase64('image/png')
 
     const nailMap: NailMap = NailMapHelper.get(frame)
-    const imageDatas: Array<ImageInfo | null> = await Promise.all(projectSettings.threads
-        .map((thread: Thread) => JimpHelper.getImageData(thread.imageData, thread.colorOptions, thread.luminosityOptions)))
+    const imageDatas: Array<ImageInfo> = (await Promise.all(projectSettings.threads
+        .map((thread: Thread) => JimpHelper.getImageData(thread.imageData, thread.colorOptions, thread.luminosityOptions))))
+        .map((i: ImageInfo | null) => i!)
     const heatMapDatas: Array<ImageInfo | null> = await Promise.all(projectSettings.threads
         .map((thread: Thread) => JimpHelper.getImageData(thread.heatMapData)))
 
