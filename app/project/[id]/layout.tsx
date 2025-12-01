@@ -26,6 +26,12 @@ export default function ({ children, params }: { children: ReactNode, params: Pr
                             <ListItemText primary="project settings" />
                         </ListItemButton>
                     </ListItem>
+                    <ListItem disablePadding>
+                        <ListItemButton
+                            onClick={() => router.push(`/project/${projectId}/ranking`)}>
+                            <ListItemText primary="ranking" />
+                        </ListItemButton>
+                    </ListItem>
                 </List>
                 <Divider/>
                 <ProjectVersionList
