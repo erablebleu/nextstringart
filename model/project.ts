@@ -33,6 +33,7 @@ export type Thread = {
     maxStep: number
     calculationThickness: number
     imageData: string
+    heatMapData?: string
     imageTransformation: NailMapTransformation
     colorOptions: ColorOptions
     luminosityOptions: LuminosityOptions

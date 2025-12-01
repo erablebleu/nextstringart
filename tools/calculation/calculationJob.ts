@@ -137,14 +137,17 @@ export class CalculationJob {
 
             const frame: Frame = await frameRepository.read(this._projectSettings.frameId)
             const nailMap: NailMap = NailMapHelper.get(frame)
-            const imageDatas: Array<ImageInfo> = await Promise.all(this._projectSettings.threads
-                .map((thread: Thread) => JimpHelper.getImageData(thread)))
+            const imageDatas: Array<ImageInfo | null> = await Promise.all(this._projectSettings.threads
+                .map((thread: Thread) => JimpHelper.getImageData(thread.imageData, thread.colorOptions, thread.luminosityOptions)))
+            const heatMapDatas: Array<ImageInfo | null> = await Promise.all(this._projectSettings.threads
+                .map((thread: Thread) => JimpHelper.getImageData(thread.heatMapData)))
 
             this._worker.postMessage({
                 project: this._project,
                 projectSettings: this._projectSettings,
                 nailMap,
                 imageDatas,
+                heatMapDatas,
             })
         }
         catch (e) {
