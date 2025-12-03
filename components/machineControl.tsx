@@ -106,7 +106,7 @@ export default function () {
                         <CropSquare />
                     </Button>
                     <Button
-                        disabled={data.job?.status != undefined}
+                        disabled={data.job?.status != MachineJobStatus.Running}
                         onClick={() => Action.try(async () => await fetchAndThrow('/api/machine/job/resend', { method: 'POST' }))}>
                         Resend
                     </Button>
