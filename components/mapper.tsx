@@ -127,13 +127,12 @@ export default function ({ thread, frame, onTransformationChange }: Options) {
                         </Button>
                     </ButtonGroup>
 
-                    <Stack direction='row' spacing={1}>
-                        <Typography fontSize={12} color='grey' sx={{ marginTop: 1 }}>x:{state.nailMap.nails[index].position.x.toFixed(2)} y:{state.nailMap.nails[index].position.y.toFixed(2)} | {state.nailMap.lines[index].length} paths</Typography>
-                    </Stack>
+                    <Typography fontSize={12} color='grey' sx={{ marginTop: 1 }}>x:{state.nailMap.nails[index].position.x.toFixed(2)} y:{state.nailMap.nails[index].position.y.toFixed(2)} | {state.nailMap.lines[index].length} paths</Typography>
                 </Stack>
                 <Stack>
                     <Typography fontSize={12} color='grey'>Shift + Drag to move</Typography>
                     <Typography fontSize={12} color='grey'>Shift + Wheel to zoom</Typography>
+                    <Typography fontSize={12} color='grey'>ox:{thread.imageTransformation.position.x.toFixed(2)} oy:{thread.imageTransformation.position.y.toFixed(2)} scale:{thread.imageTransformation.scale.toFixed(3)}</Typography>
                 </Stack>
             </Stack>
             <Box

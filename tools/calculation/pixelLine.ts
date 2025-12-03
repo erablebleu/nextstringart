@@ -153,11 +153,14 @@ export namespace PixelLineHelper {
         return result
     }
 
-    export function evaluate(line: Array<WeightPoint>, data: number[][], target: number[][], factor: number): PixelLineEvaluation {
+    export function evaluate(line: Array<WeightPoint>, data: number[][], target: number[][], factor: number, heatMap?: number[][]): PixelLineEvaluation {
         const getIndicator = (d: number, t: number, v: number) => t - d //Math.pow(t - d, 2) - Math.pow(t - v, 2)
+        const getIndicator2 = (d: number, t: number, v: number, h: number) => (t - d) * h //Math.pow(t - d, 2) - Math.pow(t - v, 2)
         const result: number[] = line.map((p: WeightPoint) => Math.min(Math.max(data[p.x][p.y] + factor * p.weight, 0), 1))
         return {
-            value: line.reduce((a: number, p: WeightPoint, index: number) => a + getIndicator(data[p.x][p.y], target[p.x][p.y], result[index]), 0),
+            value: heatMap
+                ? line.reduce((a: number, p: WeightPoint, index: number) => a + getIndicator2(data[p.x][p.y], target[p.x][p.y], result[index], heatMap[p.x][p.y]), 0)
+                : line.reduce((a: number, p: WeightPoint, index: number) => a + getIndicator(data[p.x][p.y], target[p.x][p.y], result[index]), 0),
             apply: () => line.forEach((p: WeightPoint, index: number) => data[p.x][p.y] = result[index])
         }
     }

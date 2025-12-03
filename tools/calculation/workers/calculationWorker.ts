@@ -19,6 +19,7 @@ export type CalculationWorkerStartData = {
     projectSettings: ProjectSettings
     nailMap: NailMap
     imageDatas: Array<ImageInfo>,
+    heatMapDatas: Array<ImageInfo | null>,
 }
 
 export type LineInfo = Line & {

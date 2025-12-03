@@ -8,10 +8,13 @@ export type ImageInfo = {
 }
 
 export namespace JimpHelper {
-    export async function getImageData(thread: Thread): Promise<ImageInfo> {
-        const image = await Jimp.read(thread.imageData)
+    export async function getImageData(imageData: string | undefined, colorOptions?: ColorOptions, luminosityOptions?: LuminosityOptions): Promise<ImageInfo | null> {
+        if (!imageData)
+            return null
 
-        JimpHelper.applyOptions(image, thread.colorOptions, thread.luminosityOptions)
+        const image = await Jimp.read(imageData)
+
+        JimpHelper.applyOptions(image, colorOptions, luminosityOptions)
 
         return {
             data: Uint8Array.from(image.bitmap.data), // data rgba

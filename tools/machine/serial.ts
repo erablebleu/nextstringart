@@ -7,6 +7,8 @@ import { GCodeGenerator } from './gcode/generator'
 import { MachineReferential } from './referential'
 import EventEmitter from 'node:events'
 
+const ResendDelay = 2000 // ms
+
 export class SerialMachine {
     private _settings?: MachineSettings
     private _port?: SerialPort
@@ -15,6 +17,7 @@ export class SerialMachine {
     private _status: MachineStatus = MachineStatus.Disconnected
     private _currentJob?: MachineJob
     private _referential?: MachineReferential
+    private _resendTimeout?: NodeJS.Timeout
 
     public getCurrentJob = () => this._currentJob
     public getSettings = () => this._settings
@@ -30,8 +33,14 @@ export class SerialMachine {
         for (let i = 0; i < lines.length - 1; i++) {
             const line = lines[i]
 
-            console.debug(`onData: ${line}`)
+            console.debug(`[SERIAL] onData: ${line}`)
             if (line.startsWith('ok')) {
+                // Cancel resend loop
+                if (this._resendTimeout) {                    
+                    clearTimeout(this._resendTimeout)
+                    this._resendTimeout = undefined
+                }
+
                 this._currentJob?.acknowledgeLine()
                 this.sendNextLine()
             }
@@ -41,35 +50,27 @@ export class SerialMachine {
     }
 
     private sendNextLine() {
-        if (!this._currentJob)
-            return
-
-        const line: string | undefined = this._currentJob?.getNextLine()
-
-        if (!line)
-            return
-
-        this._port!.write(line + this._settings!.delimiter, undefined, err => {
-            if (err) {
-                this.setStatus(MachineStatus.Error)
-            }
-        })
+        this.sendLine(this._currentJob?.getNextLine())
     }
 
     public resendLastLine() {
-        if (!this._currentJob)
+        this.sendLine(this._currentJob?.getLastSentLine())
+    }
+
+    private async sendLine(line: string | undefined) {
+        if (!line || !this._currentJob || !this._port)
             return
 
-        const line: string | undefined = this._currentJob?.getLastSentLine()
+        console.debug(`[SERIAL] send: ${line}`)
 
-        if (!line)
-            return
-
-        this._port!.write(line + this._settings!.delimiter, undefined, err => {
+        this._port.write(line + this._settings!.delimiter, undefined, err => {
             if (err) {
                 this.setStatus(MachineStatus.Error)
             }
         })
+
+        // resend until ack
+        this._resendTimeout = setTimeout(() => this.sendLine(line), ResendDelay)
     }
 
     private setStatus(status: MachineStatus) {
@@ -78,6 +79,7 @@ export class SerialMachine {
 
     public async connect(settings?: MachineSettings): Promise<void> {
         if (settings) {
+            console.debug(`[SERIAL] connect to ${settings?.path}`)
             this._port?.off('data', this.onData.bind(this))
 
             this._settings = settings
@@ -306,11 +308,6 @@ export class MachineJob {
     }
 
     public acknowledgeLine() {
-        console.debug({
-            type: 'ack',
-            commandIndex: this._commandIndex,
-            lineIndex: this._lineIndex
-        })
         this._commandAck = true
     }
 
@@ -363,7 +360,7 @@ export class MachineJob {
         while (true)
     }
 
-    public getLastSentLine() : string | undefined {
+    public getLastSentLine(): string | undefined {
         if (this._lineIndex == 0)
             return
 

@@ -5,7 +5,7 @@ import { buildContinuity, CalculationWokerMessage, CalculationWorkerInfo, Calcul
 import { PixelLineEvaluation, PixelLineHelper, PixelLineMode, WeightPoint } from "../pixelLine"
 import { ImageInfo } from "@/tools/imaging/jimpHelper"
 
-export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorkerStartData): Instructions {
+export function delta({ nailMap, imageDatas, heatMapDatas, projectSettings }: CalculationWorkerStartData): Instructions {
     const project: ProjectSettings = projectSettings
     const nails: Array<Nail> = nailMap.nails
     const info: CalculationWorkerInfo = {
@@ -29,6 +29,7 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
         const thread: Thread = project.threads[info.threadIndex]
         const imageInfo: ImageInfo = imageDatas[info.threadIndex]
         const imageData: Uint8Array = imageInfo.data
+        const heatMapData: Uint8Array | undefined = heatMapDatas[info.threadIndex]?.data
         const steps: Array<LineInfo> = []
         info.stepCount = thread.maxStep
         info.stepIndex = 0
@@ -77,21 +78,34 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
         minY = getY(minY!)
         maxY = getY(maxY!)
 
+        // TODO : thread.calculationThickness should be scaled
+
         log(`calculate pixel lines`)
 
         log(`thread "${thread.description}" calculate target`)
-        const target: number[][] = Array
-            .from(Array(Math.floor(maxX! - minX! + 4)).keys())
-            .map((x: number) =>
-                Array.from(Array(Math.floor(maxY! - minY! + 4)).keys())
-                    .map((y: number) => {
-                        const ix = Math.floor(minX! + x)
-                        const iy = Math.floor(minY! + y)
-                        if (ix < 0 || ix >= imageInfo.width) return 0
-                        if (iy < 0 || iy >= imageInfo.height) return 0
-                        const idx: number = 4 * (iy * imageInfo.width + ix)
-                        return 1 - (imageData[idx] + imageData[idx + 1] + imageData[idx + 2]) / 3 / 255
-                    }))
+
+        function getImagePixel(data: Uint8Array, x: number, y: number, callback: (r: number, g: number, b: number) => number): number {
+            const ix = Math.floor(minX! + x)
+            const iy = Math.floor(minY! + y)
+            if (ix < 0 || ix >= imageInfo.width) return 0
+            if (iy < 0 || iy >= imageInfo.height) return 0
+            const idx: number = 4 * (iy * imageInfo.width + ix)
+            return callback(data[idx], data[idx + 1], data[idx + 2])
+        }
+
+        function getData(data: Uint8Array | undefined, callback: (r: number, g: number, b: number) => number): number[][] | undefined {
+            if (!data)
+                return undefined
+
+            return Array
+                .from(Array(Math.floor(maxX! - minX! + 4)).keys())
+                .map((x: number) =>
+                    Array.from(Array(Math.floor(maxY! - minY! + 4)).keys())
+                        .map((y: number) => getImagePixel(data, x, y, callback)))
+        }
+
+        const target: number[][] = getData(imageData, (r, g, b) => 1 - (r + g + b) / 3 / 255)!                    
+        const heatMap: number[][] | undefined = getData(heatMapData,  (r, g, b) => (r + g + b) / 3 / 255)
         const data: number[][] = target.map((l: number[]) => l.map((v: number) => { return 0 }))
 
         var nail: Step | undefined = {
@@ -129,7 +143,7 @@ export function delta({ nailMap, imageDatas, projectSettings }: CalculationWorke
                     y: getY(l.p1.y) - minY! + 2,
                 }, PixelLineMode.Bresenham)
 
-                const e: PixelLineEvaluation = PixelLineHelper.evaluate(pixelLine, data, target, thread.calculationThickness)
+                const e: PixelLineEvaluation = PixelLineHelper.evaluate(pixelLine, data, target, thread.calculationThickness, heatMap)
 
                 if (e.value <= indicator)
                     continue

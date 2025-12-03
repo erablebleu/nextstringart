@@ -47,6 +47,12 @@ export default function ({ data, onChange, onDelete }: Options) {
                             ...state,
                             imageData: newValue,
                         })} />
+                    <ImageSelector
+                        imageData={data.heatMapData}
+                        onChange={(newValue: string) => setNewValue({
+                            ...state,
+                            heatMapData: newValue,
+                        })} />
                 </Grid>
                 <Grid item xs={6}>
                     <Stack spacing={1} margin={1}>
