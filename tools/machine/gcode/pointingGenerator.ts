@@ -20,7 +20,7 @@ export class PointingGCodeGenerator extends GCodeGenerator {
     }
 
     public generate(): Array<string> {
-        for(let i = 0; i < this.map.length + 1; i++) {
+        for(let i = 100; i < this.map.length + 1; i++) {
             const nail = this.map[i % this.map.length]
             super.moveToCartesian(nail.position)
             super.pause(this._gCodeSettings.pauseDuration)
