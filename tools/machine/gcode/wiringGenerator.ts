@@ -13,7 +13,7 @@ export type WiringGCodeSettings = {
     zHigh: number
 }
 
-const INNER_RING_MARGIN = 100
+const INNER_RING_MARGIN = 30
 
 export class WiringGCodeGenerator extends GCodeGenerator {
     private _center: Point = { x: 0, y: 0 }
@@ -35,6 +35,9 @@ export class WiringGCodeGenerator extends GCodeGenerator {
         super.displayMessage(`waiting start command`)
         super.addMetadata('command', 'pause')
 
+        const insideDist = 5
+        const oustideDist = 10
+
         for (let i = 0; i < steps.length; i++) {
             const step: Step = steps[i]
             const node: Point = this.map[step.nailIndex].position
@@ -43,33 +46,28 @@ export class WiringGCodeGenerator extends GCodeGenerator {
             const exitTupleNode: Point = step.direction == RotationDirection.ClockWise ? super.getPreviousNail(step.nailIndex) : super.getNextNail(step.nailIndex)
 
             const entry_d: number = Cartesian.distance(entryTupleNode, node) / 2
-            const entry_d0 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(10, 2))
-            const entry_d1 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(10, 2))
+            const entry_d0 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(insideDist, 2))
+            const entry_d1 = Math.sqrt(Math.pow(entry_d, 2) + Math.pow(oustideDist, 2))
             const entry_p0 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(entryTupleNode, node, entry_d0), this._center)
             const entry_p1 = Cartesian.getFurthestPoint(Cartesian.getEquidistantPoints(entryTupleNode, node, entry_d1), this._center)
             const entry_p0_polar = Polar.fromCartesian(entry_p0)
 
             const exit_d: number = Cartesian.distance(node, exitTupleNode) / 2
-            const exit_d0 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(10, 2))
-            const exit_d1 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(10, 2))
-            const exit_d2 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(30, 2))
+            const exit_d0 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(oustideDist, 2))
+            const exit_d1 = Math.sqrt(Math.pow(exit_d, 2) + Math.pow(insideDist, 2))
             const exit_p0 = Cartesian.getFurthestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d0), this._center)
             const exit_p1 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d1), this._center)
-            const exit_p2 = Cartesian.getClosestPoint(Cartesian.getEquidistantPoints(node, exitTupleNode, exit_d2), this._center)
 
             // z move
             entry_p0.z = this._gCodeSettings.zHigh
-            entry_p1.z = this._gCodeSettings.zHigh
+            entry_p1.z = this._gCodeSettings.zLow
 
             exit_p0.z = this._gCodeSettings.zLow
-            exit_p1.z = this._gCodeSettings.zLow
-            exit_p2.z = this._gCodeSettings.zMove
+            exit_p1.z = this._gCodeSettings.zHigh
 
             super.displayMessage(`step ${i + 1}/${steps.length}`)
             super.addMetadata('step', `${i + 1}/${steps.length}`)
             super.addMetadata('target_nail', `${step.nailIndex}`)
-            super.setSpeedProfile(SpeedProfile.Fast)
-            super.moveToPolar({ r: this._innerRingX })
             super.moveToPolar({ a: entry_p0_polar.a })
             super.moveToPolar({ r: entry_p0_polar.r })
             super.setSpeedProfile(SpeedProfile.Slow)
@@ -77,11 +75,9 @@ export class WiringGCodeGenerator extends GCodeGenerator {
             super.buildLinearTrajectory(entry_p0, entry_p1)
             super.moveToCartesian(exit_p0)
             super.buildLinearTrajectory(exit_p0, exit_p1)
-            super.buildLinearTrajectory(exit_p1, exit_p2)
+            super.setSpeedProfile(SpeedProfile.Fast)
+            super.moveToPolar({ r: this._innerRingX })
         }
-
-        super.setSpeedProfile(SpeedProfile.Fast)
-        super.moveToPolar({ r: this._innerRingX })
     }
 
     public addFlatSteps(steps: Step[]) {
@@ -90,7 +86,7 @@ export class WiringGCodeGenerator extends GCodeGenerator {
         super.displayMessage(`waiting start command`)
         super.addMetadata('command', 'pause')
 
-        for (let i = 2273; i < steps.length; i++) {
+        for (let i = 0; i < steps.length; i++) {
             const step: Step = steps[i]
             const node: Point = this.map[step.nailIndex].position
 
@@ -127,7 +123,7 @@ export class WiringGCodeGenerator extends GCodeGenerator {
         super.moveToPolar({ r: this._innerRingX })
     }
 
-    public testNails(steps: Step[]) {
+    public testNails() {
         super.setSpeedProfile(SpeedProfile.Fast)
         super.moveToPolar({ r: this._innerRingX, z: this._gCodeSettings.zHigh })
         super.displayMessage(`waiting start command`)
@@ -159,6 +155,25 @@ export class WiringGCodeGenerator extends GCodeGenerator {
             super.buildLinearTrajectory(entry_p0, entry_p1)
             super.moveToCartesian(exit_p0)
             super.buildLinearTrajectory(exit_p0, exit_p1)
+        }
+
+        super.setSpeedProfile(SpeedProfile.Fast)
+        super.moveToPolar({ r: this._innerRingX })
+    }
+
+    public testNails2(height: number) {
+        super.setSpeedProfile(SpeedProfile.Fast)
+        super.moveToPolar({ r: this._innerRingX, z: height })
+        super.displayMessage(`waiting start command`)
+        super.addMetadata('command', 'pause')
+
+        for (let i = 0; i < this.map.length + 1; i++) {
+            const node: Point = this.map[i % this.map.length].position
+
+            super.moveToCartesian({ x: node.x, y: node.y })
+
+            if((i+1) % (this.map.length / 6 ) == 0)
+                super.addMetadata('command', 'pause')
         }
 
         super.setSpeedProfile(SpeedProfile.Fast)
