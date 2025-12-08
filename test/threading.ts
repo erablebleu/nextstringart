@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { Instructions } from "@/model"
+import { Instructions, RotationDirection } from "@/model"
 import { join } from "node:path"
 import { projectRepository, SettingsFilePath } from "@/global"
 import { File } from "@/tools/file.back"
@@ -11,26 +11,26 @@ const outDirectory = join(__dirname, 'out')
 run()
 
 async function run() {
-    const projectId = '51ee426a-c77e-47f9-a2d7-aea2b2564f46'
-    const projectVersion = '20250827150056019'
-    const instructions: Instructions = await projectRepository.getInstructions(projectId, projectVersion)
-    const machineSettings: MachineSettings = await File.readJSON<MachineSettings>(SettingsFilePath)
+
+
+    const projectId = 'ee0b62be-7861-4608-990f-6332954af547'
+    const projectVersion = '20251205192843931'
+
     
-    const gCodeSettings: WiringGCodeSettings = {
-        zMove: 15,
-        zHigh: 28,
-        zLow: 27,
-    }
-    const gCodeGenerator = new WiringGCodeGenerator(instructions.nails, machineSettings, gCodeSettings)
+    const instructions: Instructions = await projectRepository.getInstructions(projectId, projectVersion)
 
-    gCodeGenerator.addFlatSteps(instructions.steps)
-    // gCodeGenerator.testNails(instructions.steps)
-    // gCodeGenerator.addSteps(instructions.steps.slice(187))
+    instructions.steps = instructions.steps.reverse()
+    
+    instructions.steps.forEach(s => {
+        s.direction = s.direction == RotationDirection.AntiClockWise ? RotationDirection.ClockWise : RotationDirection.AntiClockWise
+    })
+    
+    await projectRepository.set(projectId, projectVersion, { instructions })
+    return
 
-    const gCode: string[] = gCodeGenerator.generate()
 
-    if (!fs.existsSync(outDirectory))
-        await fs.promises.mkdir(outDirectory)
 
-    await fs.promises.writeFile(join(outDirectory, 'threading.gcode'), gCode.join('\n'), { flag: 'w' })
+
+
+    
 }

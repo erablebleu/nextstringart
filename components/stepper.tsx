@@ -1,6 +1,6 @@
 'use client'
 
-import { FormControlLabel, Checkbox, Grid, Button, ButtonGroup, Stack, TextField, Typography, Rating, InputAdornment } from "@mui/material"
+import { FormControlLabel, Checkbox, Grid, Button, ButtonGroup, Stack, TextField, Typography, Rating, InputAdornment, Slider } from "@mui/material"
 import { ChevronLeft, ChevronRight, FirstPage, LastPage } from "@mui/icons-material"
 import { Instructions, Nail, ProjectVersionInfo, RotationDirection, Step } from "@/model"
 import { fetchAndThrow } from "@/tools/fetch"
@@ -18,7 +18,8 @@ type Options = {
 
 export default function ({ projectId, projectVersion }: Options) {
     const [settings, setSettings] = useLocalStorage(`stepper_settings_${projectId}_${projectVersion}`, {
-        step: 0,
+        fromStep: 0,
+        toStep: 100,
         offset: 0,
         thickness: 0.20,
         speech: false,
@@ -39,6 +40,9 @@ export default function ({ projectId, projectVersion }: Options) {
                 const instructions: Instructions = await (await instructionPromise)?.json()
                 const versionInfo: ProjectVersionInfo = await (await versionInfoPromise).json()
 
+                settings.fromStep ??= 0
+                settings.toStep ??= instructions.steps.length - 1
+
                 setState({
                     ...instructions,
                     rating: versionInfo.rating,
@@ -52,7 +56,7 @@ export default function ({ projectId, projectVersion }: Options) {
     async function goToStep(number: number) {
         setSettings({
             ...settings,
-            step: number
+            toStep: number
         })
         const instruction: Step = state!.steps[number]
 
@@ -107,7 +111,7 @@ export default function ({ projectId, projectVersion }: Options) {
             No data
         </Fragment>
 
-    let step = settings.step
+    let step = settings.toStep ?? 0
 
     if (step >= state.steps.length) {
         step = 0
@@ -209,6 +213,16 @@ export default function ({ projectId, projectVersion }: Options) {
                                 onClick={() => goToStep(state.steps.length - 1)} />
                         </Button>
                     </ButtonGroup>
+                    <Slider
+                        value={[settings.fromStep, settings.toStep]}
+                        onChange={(e, v) => setSettings({
+                            ...settings,
+                            fromStep: v[0],
+                            toStep: v[1]
+                        })}
+                        valueLabelDisplay="auto"
+                        max={state.steps.length - 1}
+                        />
                 </Grid>
 
                 <Grid item xs={3}>
@@ -234,7 +248,8 @@ export default function ({ projectId, projectVersion }: Options) {
                     showArrow={true}
                     showNails={true}
                     showNumber={true}
-                    step={settings.step}
+                    fromStep={settings.fromStep}
+                    toStep={settings.toStep}
                     highlightLast={true}
                     nailOffset={settings.offset}
                     strokeWidth={settings.thickness} />
